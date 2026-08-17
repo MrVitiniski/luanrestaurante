@@ -296,3 +296,139 @@ input:focus,select:focus,textarea:focus{
   word-break:break-word;
 }
 .modal-actions{display:grid;gap:8px;margin-top:12px}
+/* ===== MOBILE FIX (igualar visual com desktop) ===== */
+@media (max-width: 768px){
+  .app{
+    max-width: 100%;
+    padding:10px 10px 120px;
+  }
+
+  .brand{
+    position:sticky;
+    top:6px;
+    padding:10px;
+    border-radius:14px;
+  }
+
+  .stepper{
+    gap:6px;
+  }
+
+  .step{
+    font-size:.70rem;
+    padding:7px 4px;
+  }
+
+  .card{
+    padding:10px;
+    border-radius:12px;
+  }
+
+  .choices{
+    gap:8px;
+  }
+
+  .choice{
+    padding:10px;
+    border-radius:12px;
+    align-items:flex-start;
+    flex-direction:column; /* quebra vertical para não esmagar */
+    gap:8px;
+  }
+
+  .choice > div:last-child{
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .price{
+    font-size:.92rem;
+  }
+
+  .choice strong{
+    font-size:.90rem;
+  }
+
+  .choice small{
+    font-size:.76rem;
+  }
+
+  .qty-control{
+    margin-left:auto;
+  }
+
+  .qty-btn{
+    width:32px;
+    height:32px;
+    font-size:18px;
+  }
+
+  .qty-number{
+    min-width:26px;
+    font-size:.95rem;
+  }
+
+  .grid{
+    gap:8px;
+  }
+
+  input,select,textarea{
+    font-size:16px; /* evita zoom automático do iPhone */
+    padding:10px 10px;
+  }
+
+  .summary{
+    font-size:.86rem;
+  }
+
+  .row{
+    gap:8px;
+  }
+
+  .nav{
+    padding:8px 10px calc(8px + var(--safe-bottom));
+  }
+
+  .nav-wrap{
+    gap:8px;
+  }
+
+  .btn{
+    padding:11px 10px;
+    font-size:.9rem;
+    border-radius:10px;
+  }
+
+  .modal{
+    padding:10px;
+  }
+
+  .modal-card{
+    width:100%;
+    max-width:100%;
+    border-radius:12px;
+    padding:12px;
+  }
+}
+
+/* telas muito pequenas */
+@media (max-width: 380px){
+  .step{
+    font-size:.66rem;
+  }
+
+  .brand h1{
+    font-size:.92rem;
+  }
+
+  .brand p{
+    font-size:.72rem;
+  }
+
+  .qty-btn{
+    width:30px;
+    height:30px;
+  }
+}
