@@ -1,326 +1,495 @@
-// ======= CONFIG =======
 const CONFIG = {
   restaurantName: "Marmita Express",
-  deliveryFee: 5.0,
-  whatsappNumber: "5511999999999", // troque para o número real com DDI+DDD
-  apiEndpoint: "http://localhost:3000/orders" // backend futuro
+  deliveryFee: 5.00,
+  whatsappNumber: "5511999999999",
+  pixKey: "05674008914",
+  draftKey: "marmita_draft_v3_multi"
 };
 
-// ======= MENU =======
-const MENU = [
-  { id: "m1", name: "Marmita P", description: "Arroz, feijão, proteína + salada", price: 18.9 },
-  { id: "m2", name: "Marmita M", description: "Porção média reforçada", price: 22.9 },
-  { id: "m3", name: "Marmita G", description: "Porção grande completa", price: 27.9 },
-  { id: "m4", name: "Fit (Low Carb)", description: "Proteína + legumes + salada", price: 26.5 }
+const MARMITAS = [
+  { id:"p", name:"Marmita P", desc:"Arroz, feijão, proteína + salada", price:18.90 },
+  { id:"m", name:"Marmita M", desc:"Porção média reforçada", price:22.90 },
+  { id:"g", name:"Marmita G", desc:"Porção grande completa", price:27.90 }
 ];
 
 const DRINKS = [
-  { id: "d1", name: "Coca-Cola Lata", price: 6.0 },
-  { id: "d2", name: "Guaraná Lata", price: 5.5 },
-  { id: "d3", name: "Água 500ml", price: 3.5 }
+  { id:"coca_lata", name:"Coca-Cola Lata", desc:"350ml", price:6.00 },
+  { id:"coca_600", name:"Coca-Cola 600ml", desc:"Garrafa", price:9.00 },
+  { id:"coca_2l", name:"Coca-Cola 2L", desc:"Garrafa família", price:14.00 },
+
+  { id:"gua_lata", name:"Guaraná Lata", desc:"350ml", price:5.50 },
+  { id:"gua_600", name:"Guaraná 600ml", desc:"Garrafa", price:8.50 },
+  { id:"gua_2l", name:"Guaraná 2L", desc:"Garrafa família", price:13.00 },
+
+  { id:"suk_lata", name:"Sukita Laranja Lata", desc:"350ml", price:5.50 },
+  { id:"suk_600", name:"Sukita Laranja 600ml", desc:"Garrafa", price:8.50 },
+  { id:"suk_2l", name:"Sukita Laranja 2L", desc:"Garrafa família", price:12.00 },
+
+  { id:"agua_sem_gas", name:"Água 500ml sem gás", desc:"Garrafa", price:3.50 },
+  { id:"agua_com_gas", name:"Água 500ml com gás", desc:"Garrafa", price:4.00 }
 ];
 
-// ======= STATE =======
-const state = {
-  items: {},   // {id: qty}
-  drinks: {},  // {id: qty}
-  kitchenOrders: []
-};
+let currentStep = 1;
+let selectedMarmitas = {}; // {id: qty}
+let selectedDrinks = {};   // {id: qty}
 
-// ======= HELPERS =======
-const $ = (sel) => document.querySelector(sel);
-const currency = (value) =>
-  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const $ = (s) => document.querySelector(s);
+const money = (v) => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+function onlyDigits(v){ return (v||"").replace(/\D/g,""); }
 
-function normalizePhone(phone) {
-  return phone.replace(/\D/g, "");
+function toast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(()=>el.classList.remove("show"), 1800);
 }
 
-// ======= RENDER MENU =======
-function renderMenu() {
-  const menuContainer = $("#menuContainer");
-  menuContainer.innerHTML = MENU.map(item => itemCard(item, "items")).join("");
-
-  const drinksContainer = $("#drinksContainer");
-  drinksContainer.innerHTML = DRINKS.map(item => itemCard(item, "drinks")).join("");
-
-  attachQtyEvents();
+function maskPhone(v){
+  const d = onlyDigits(v).slice(0,11);
+  if(d.length <= 2) return d;
+  if(d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+}
+function maskCep(v){
+  const d = onlyDigits(v).slice(0,8);
+  if(d.length <= 5) return d;
+  return `${d.slice(0,5)}-${d.slice(5)}`;
 }
 
-function itemCard(item, group) {
-  const qty = state[group][item.id] || 0;
+function itemCardTemplate(item, group, qty){
   return `
-    <article class="item-card">
-      <h4>${item.name}</h4>
-      ${item.description ? `<p class="desc">${item.description}</p>` : ""}
-      <div class="price">${currency(item.price)}</div>
-      <div class="qty">
-        <button type="button" data-group="${group}" data-id="${item.id}" data-action="dec">-</button>
-        <span id="qty-${group}-${item.id}">${qty}</span>
-        <button type="button" data-group="${group}" data-id="${item.id}" data-action="inc">+</button>
+    <article class="choice">
+      <div>
+        <strong>${item.name}</strong><br/>
+        <small>${item.desc}</small>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="price">${money(item.price)}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button type="button" data-group="${group}" data-id="${item.id}" data-action="dec" class="btn prev" style="padding:4px 10px;border-radius:10px">-</button>
+          <strong id="qty-${group}-${item.id}" style="min-width:18px;text-align:center">${qty}</strong>
+          <button type="button" data-group="${group}" data-id="${item.id}" data-action="inc" class="btn next" style="padding:4px 10px;border-radius:10px">+</button>
+        </div>
       </div>
     </article>
   `;
 }
 
-function attachQtyEvents() {
-  document.querySelectorAll(".qty button").forEach(btn => {
-    btn.addEventListener("click", () => {
+function renderMarmitas(){
+  $("#marmitaChoices").innerHTML = MARMITAS
+    .map(item => itemCardTemplate(item, "marmita", selectedMarmitas[item.id] || 0))
+    .join("");
+}
+
+function renderDrinks(){
+  $("#drinkChoices").innerHTML = DRINKS
+    .map(item => itemCardTemplate(item, "drink", selectedDrinks[item.id] || 0))
+    .join("");
+}
+
+function attachQtyEvents(){
+  document.querySelectorAll("button[data-group]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
       const group = btn.dataset.group;
       const id = btn.dataset.id;
       const action = btn.dataset.action;
 
-      const current = state[group][id] || 0;
-      const next = action === "inc" ? current + 1 : Math.max(0, current - 1);
+      const stateObj = group === "marmita" ? selectedMarmitas : selectedDrinks;
+      const cur = stateObj[id] || 0;
+      const next = action === "inc" ? cur + 1 : Math.max(0, cur - 1);
 
-      state[group][id] = next;
+      stateObj[id] = next;
       $(`#qty-${group}-${id}`).textContent = next;
+
+      clearInvalidById("marmitaChoices");
       renderSummary();
+      saveDraft();
     });
   });
 }
 
-// ======= SUMMARY =======
-function getSelectedLines() {
+function getSelectedMarmitaLines(){
   const lines = [];
-
-  MENU.forEach(item => {
-    const qty = state.items[item.id] || 0;
-    if (qty > 0) {
+  for(const item of MARMITAS){
+    const qty = selectedMarmitas[item.id] || 0;
+    if(qty > 0){
       lines.push({
-        label: `${item.name} x${qty}`,
+        type: "marmita",
+        name: item.name,
+        qty,
+        unit: item.price,
         total: item.price * qty
       });
     }
-  });
-
-  DRINKS.forEach(item => {
-    const qty = state.drinks[item.id] || 0;
-    if (qty > 0) {
-      lines.push({
-        label: `${item.name} x${qty}`,
-        total: item.price * qty
-      });
-    }
-  });
-
+  }
   return lines;
 }
 
-function calculateTotals() {
-  const lines = getSelectedLines();
-  const subtotal = lines.reduce((acc, line) => acc + line.total, 0);
+function getSelectedDrinkLines(){
+  const lines = [];
+  for(const item of DRINKS){
+    const qty = selectedDrinks[item.id] || 0;
+    if(qty > 0){
+      lines.push({
+        type: "bebida",
+        name: item.name,
+        qty,
+        unit: item.price,
+        total: item.price * qty
+      });
+    }
+  }
+  return lines;
+}
+
+function getAllSelectedLines(){
+  return [...getSelectedMarmitaLines(), ...getSelectedDrinkLines()];
+}
+
+function calcTotal(){
+  const lines = getAllSelectedLines();
+  const subtotal = lines.reduce((acc, l) => acc + l.total, 0);
   const delivery = subtotal > 0 ? CONFIG.deliveryFee : 0;
   const total = subtotal + delivery;
   return { lines, subtotal, delivery, total };
 }
 
-function renderSummary() {
-  const { lines, subtotal, delivery, total } = calculateTotals();
-  const summary = $("#summaryItems");
+function renderSummary(){
+  const { lines, subtotal, delivery, total } = calcTotal();
 
-  if (!lines.length) {
-    summary.classList.add("empty");
-    summary.textContent = "Nenhum item selecionado.";
+  let itemsHtml = "";
+  if(!lines.length){
+    itemsHtml = `<div class="row"><span>Itens</span><strong>Nenhum selecionado</strong></div>`;
   } else {
-    summary.classList.remove("empty");
-    summary.innerHTML = lines.map(line => `
-      <div class="summary-row">
-        <span>${line.label}</span>
-        <strong>${currency(line.total)}</strong>
+    itemsHtml = lines.map(l => `
+      <div class="row">
+        <span>${l.name} x${l.qty}</span>
+        <strong>${money(l.total)}</strong>
       </div>
     `).join("");
   }
 
-  $("#subtotalValue").textContent = currency(subtotal);
-  $("#deliveryValue").textContent = currency(delivery);
-  $("#totalValue").textContent = currency(total);
+  $("#summaryBox").innerHTML = `
+    ${itemsHtml}
+    <div class="row"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
+    <div class="row"><span>Entrega</span><strong>${money(delivery)}</strong></div>
+    <div class="row total"><span>Total</span><strong>${money(total)}</strong></div>
+  `;
 }
 
-// ======= ORDER DATA =======
-function buildOrderPayload() {
-  const form = $("#orderForm");
-  const data = new FormData(form);
+function updateProgress(){
+  const pct = currentStep === 1 ? 33 : currentStep === 2 ? 66 : 100;
+  $("#progressBar").style.width = pct + "%";
+  $("#progressLabel").textContent = pct + "%";
+}
+function updateStepUI(){
+  [1,2,3].forEach(i => {
+    $("#step"+i).classList.toggle("active", i===currentStep);
+    $("#stepIndicator"+i).classList.toggle("active", i===currentStep);
+  });
+  $("#btnPrev").disabled = currentStep === 1;
+  $("#btnNext").textContent = currentStep === 3 ? "Finalizar pedido" : "Próximo";
+  updateProgress();
+}
 
-  const customerName = data.get("customerName")?.toString().trim();
-  const customerPhone = data.get("customerPhone")?.toString().trim();
-  const addressStreet = data.get("addressStreet")?.toString().trim();
-  const addressNumber = data.get("addressNumber")?.toString().trim();
-  const addressDistrict = data.get("addressDistrict")?.toString().trim();
-  const addressComplement = data.get("addressComplement")?.toString().trim();
-  const paymentMethod = data.get("paymentMethod")?.toString().trim();
-  const changeFor = Number(data.get("changeFor") || 0);
-  const notes = data.get("notes")?.toString().trim();
+/* validação visual */
+function setInvalid(input, message){
+  input.classList.add("is-invalid");
+  let err = input.parentElement.querySelector(".error-text");
+  if(!err){
+    err = document.createElement("small");
+    err.className = "error-text";
+    input.parentElement.appendChild(err);
+  }
+  err.textContent = message;
+}
+function clearInvalid(input){
+  input.classList.remove("is-invalid");
+  const err = input.parentElement.querySelector(".error-text");
+  if(err) err.remove();
+}
+function setInvalidById(id){ const el=$("#"+id); if(el) el.classList.add("is-invalid"); }
+function clearInvalidById(id){ const el=$("#"+id); if(el) el.classList.remove("is-invalid"); }
 
-  const { lines, subtotal, delivery, total } = calculateTotals();
+function validateStep(step){
+  if(step === 1){
+    const totalMarmitas = Object.values(selectedMarmitas).reduce((a,b)=>a+b,0);
+    if(totalMarmitas <= 0){
+      setInvalidById("marmitaChoices");
+      toast("Adicione pelo menos 1 marmita.");
+      return false;
+    }
+    return true;
+  }
+
+  if(step === 2){
+    let ok = true;
+    const required = [
+      ["customerName","Informe seu nome."],
+      ["customerPhone","Informe seu WhatsApp."],
+      ["addressZip","Informe o CEP."],
+      ["addressDistrict","Informe o bairro."],
+      ["addressStreet","Informe a rua."],
+      ["addressNumber","Informe o número."],
+      ["addressComplement","Informe o complemento/referência."]
+    ];
+
+    required.forEach(([id,msg])=>{
+      const input = $("#"+id);
+      if(!input.value.trim()){ setInvalid(input, msg); ok = false; }
+      else clearInvalid(input);
+    });
+
+    if(onlyDigits($("#customerPhone").value).length < 10){
+      setInvalid($("#customerPhone"), "WhatsApp inválido."); ok = false;
+    }
+    if(onlyDigits($("#addressZip").value).length !== 8){
+      setInvalid($("#addressZip"), "CEP inválido."); ok = false;
+    }
+
+    if(!ok){ toast("Preencha os campos obrigatórios."); return false; }
+    return true;
+  }
+
+  if(step === 3){
+    let ok = true;
+    const method = $("#paymentMethod");
+    if(!method.value){ setInvalid(method, "Selecione a forma de pagamento."); ok = false; }
+    else clearInvalid(method);
+
+    if(method.value === "Dinheiro"){
+      const troco = $("#changeFor");
+      if(!troco.value){ setInvalid(troco, "Informe o troco para quanto."); ok = false; }
+      else clearInvalid(troco);
+    } else clearInvalid($("#changeFor"));
+
+    if(!ok){ toast("Revise os dados de pagamento."); return false; }
+    return true;
+  }
+  return true;
+}
+
+function buildOrder(){
+  const { lines, subtotal, delivery, total } = calcTotal();
 
   return {
-    restaurant: CONFIG.restaurantName,
-    createdAt: new Date().toISOString(),
     customer: {
-      name: customerName,
-      phone: customerPhone
+      name: $("#customerName").value.trim(),
+      phone: $("#customerPhone").value.trim()
     },
     address: {
-      street: addressStreet,
-      number: addressNumber,
-      district: addressDistrict,
-      complement: addressComplement || ""
+      zip: $("#addressZip").value.trim(),
+      district: $("#addressDistrict").value.trim(),
+      street: $("#addressStreet").value.trim(),
+      number: $("#addressNumber").value.trim(),
+      complement: $("#addressComplement").value.trim()
+    },
+    items: {
+      lines,
+      observacao: $("#notes").value.trim()
     },
     payment: {
-      method: paymentMethod,
-      changeFor: paymentMethod === "Dinheiro" ? changeFor : 0
+      method: $("#paymentMethod").value,
+      changeFor: Number($("#changeFor").value || 0)
     },
-    notes: notes || "",
-    items: lines,
-    totals: { subtotal, delivery, total },
-    status: "NOVO"
+    totals: { subtotal, delivery, total }
   };
 }
 
-function validateOrder(order) {
-  if (!order.customer.name) return "Informe seu nome.";
-  if (!order.customer.phone) return "Informe seu WhatsApp.";
-  if (!order.address.street || !order.address.number || !order.address.district) {
-    return "Preencha o endereço completo.";
-  }
-  if (!order.payment.method) return "Selecione a forma de pagamento.";
-  if (!order.items.length) return "Adicione ao menos um item.";
-  return null;
-}
+function orderMessage(order, includePix = false){
+  const itemLines = order.items.lines.map(i => `- ${i.name} x${i.qty} (${money(i.total)})`).join("\n");
 
-// ======= API SIMULATION =======
-async function submitOrderToApi(order) {
-  // Simulação local: tenta enviar para API, se falhar mantém local
-  try {
-    const res = await fetch(CONFIG.apiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(order)
-    });
-
-    if (!res.ok) throw new Error("Falha na API");
-    const result = await res.json();
-    return { ok: true, data: result };
-  } catch {
-    // fallback local
-    return {
-      ok: true,
-      data: { orderId: "LOCAL-" + Date.now(), ...order }
-    };
-  }
-}
-
-// ======= KITCHEN BOARD =======
-function addKitchenOrder(orderData) {
-  state.kitchenOrders.unshift(orderData);
-  renderKitchenOrders();
-}
-
-function renderKitchenOrders() {
-  const container = $("#kitchenOrders");
-
-  if (!state.kitchenOrders.length) {
-    container.classList.add("empty");
-    container.textContent = "Ainda não há pedidos.";
-    return;
-  }
-
-  container.classList.remove("empty");
-  container.innerHTML = state.kitchenOrders.map(order => `
-    <div class="kitchen-order">
-      <div class="head">
-        <strong>Pedido ${order.orderId || "(sem id)"}</strong>
-        <span class="status">${order.status || "NOVO"}</span>
-      </div>
-      <div><b>Cliente:</b> ${order.customer?.name} (${order.customer?.phone})</div>
-      <div><b>Endereço:</b> ${order.address?.street}, ${order.address?.number} - ${order.address?.district}</div>
-      <div><b>Pagamento:</b> ${order.payment?.method}</div>
-      <div><b>Total:</b> ${currency(order.totals?.total || 0)}</div>
-      <div><b>Itens:</b> ${order.items?.map(i => i.label).join(", ")}</div>
-    </div>
-  `).join("");
-}
-
-// ======= WHATSAPP =======
-function buildWhatsAppMessage(order) {
-  const itemsText = order.items.map(i => `- ${i.label} (${currency(i.total)})`).join("\n");
-  return [
-    `*Novo Pedido - ${CONFIG.restaurantName}*`,
+  const lines = [
+    `*Pedido - ${CONFIG.restaurantName}*`,
     ``,
     `*Cliente:* ${order.customer.name}`,
-    `*Telefone:* ${order.customer.phone}`,
+    `*WhatsApp:* ${order.customer.phone}`,
     ``,
     `*Itens:*`,
-    itemsText,
-    ``,
-    `*Subtotal:* ${currency(order.totals.subtotal)}`,
-    `*Entrega:* ${currency(order.totals.delivery)}`,
-    `*Total:* ${currency(order.totals.total)}`,
+    itemLines || "-",
+    order.items.observacao ? `*Obs:* ${order.items.observacao}` : "",
     ``,
     `*Endereço:* ${order.address.street}, ${order.address.number} - ${order.address.district}`,
-    order.address.complement ? `*Complemento:* ${order.address.complement}` : "",
+    `*CEP:* ${order.address.zip}`,
+    `*Complemento:* ${order.address.complement}`,
+    ``,
     `*Pagamento:* ${order.payment.method}`,
-    order.payment.method === "Dinheiro" && order.payment.changeFor > 0
-      ? `*Troco para:* ${currency(order.payment.changeFor)}`
-      : "",
-    order.notes ? `*Obs:* ${order.notes}` : ""
-  ].filter(Boolean).join("\n");
+    order.payment.method === "Dinheiro" ? `*Troco para:* ${money(order.payment.changeFor)}` : "",
+    ``,
+    `*Total:* ${money(order.totals.total)}`
+  ].filter(Boolean);
+
+  if(includePix){
+    lines.push(
+      ``,
+      `*Dados PIX:*`,
+      `- CPF: 05674008914`,
+      `- Nome: THOMAZ VITINISKI`,
+      `- Banco: Efí`,
+      ``,
+      `Acabei de realizar o pagamento PIX e vou enviar o comprovante.`
+    );
+  }
+  return lines.join("\n");
 }
 
-function openWhatsAppWithText(text) {
-  const encoded = encodeURIComponent(text);
-  const url = `https://wa.me/${CONFIG.whatsappNumber}?text=${encoded}`;
-  window.open(url, "_blank");
+function openPixModal(){ $("#pixModal").classList.add("show"); $("#pixModal").setAttribute("aria-hidden","false"); }
+function closePixModal(){ $("#pixModal").classList.remove("show"); $("#pixModal").setAttribute("aria-hidden","true"); }
+
+function saveDraft(){
+  const draft = {
+    currentStep,
+    selectedMarmitas,
+    selectedDrinks,
+    notes: $("#notes").value,
+    customerName: $("#customerName").value,
+    customerPhone: $("#customerPhone").value,
+    addressZip: $("#addressZip").value,
+    addressDistrict: $("#addressDistrict").value,
+    addressStreet: $("#addressStreet").value,
+    addressNumber: $("#addressNumber").value,
+    addressComplement: $("#addressComplement").value,
+    paymentMethod: $("#paymentMethod").value,
+    changeFor: $("#changeFor").value
+  };
+  localStorage.setItem(CONFIG.draftKey, JSON.stringify(draft));
 }
 
-// ======= EVENTS =======
-function setupEvents() {
-  $("#btnSubmitOrder").addEventListener("click", async () => {
-    const order = buildOrderPayload();
-    const error = validateOrder(order);
-    if (error) {
-      alert(error);
-      return;
-    }
+function loadDraft(){
+  const raw = localStorage.getItem(CONFIG.draftKey);
+  if(!raw) return;
+  try{
+    const d = JSON.parse(raw);
+    currentStep = d.currentStep || 1;
+    selectedMarmitas = d.selectedMarmitas || {};
+    selectedDrinks = d.selectedDrinks || {};
 
-    const result = await submitOrderToApi(order);
-    if (!result.ok) {
-      alert("Não foi possível enviar o pedido.");
-      return;
-    }
-
-    addKitchenOrder(result.data);
-    alert(`Pedido enviado com sucesso! ID: ${result.data.orderId}`);
-  });
-
-  $("#btnSendWhatsApp").addEventListener("click", () => {
-    const order = buildOrderPayload();
-    const error = validateOrder(order);
-    if (error) {
-      alert(error);
-      return;
-    }
-
-    const msg = buildWhatsAppMessage(order);
-    openWhatsAppWithText(msg);
-  });
-
-  $("#btnClear").addEventListener("click", () => {
-    state.items = {};
-    state.drinks = {};
-    renderMenu();
-    renderSummary();
-    $("#orderForm").reset();
-  });
-
-  $("#btnWhatsApp").setAttribute("href", `https://wa.me/${CONFIG.whatsappNumber}`);
+    $("#notes").value = d.notes || "";
+    $("#customerName").value = d.customerName || "";
+    $("#customerPhone").value = d.customerPhone || "";
+    $("#addressZip").value = d.addressZip || "";
+    $("#addressDistrict").value = d.addressDistrict || "";
+    $("#addressStreet").value = d.addressStreet || "";
+    $("#addressNumber").value = d.addressNumber || "";
+    $("#addressComplement").value = d.addressComplement || "";
+    $("#paymentMethod").value = d.paymentMethod || "";
+    $("#changeFor").value = d.changeFor || "";
+    $("#changeField").style.display = $("#paymentMethod").value === "Dinheiro" ? "block" : "none";
+  }catch{
+    localStorage.removeItem(CONFIG.draftKey);
+  }
 }
+function clearDraft(){ localStorage.removeItem(CONFIG.draftKey); }
 
-// ======= INIT =======
-(function init() {
-  $("#year").textContent = new Date().getFullYear();
-  renderMenu();
+function resetAll(){
+  selectedMarmitas = {};
+  selectedDrinks = {};
+  currentStep = 1;
+
+  $("#notes").value = "";
+  ["customerName","customerPhone","addressZip","addressDistrict","addressStreet","addressNumber","addressComplement","changeFor"]
+    .forEach(id => $("#"+id).value = "");
+  $("#paymentMethod").value = "";
+  $("#changeField").style.display = "none";
+
+  document.querySelectorAll(".is-invalid").forEach(el=>el.classList.remove("is-invalid"));
+  document.querySelectorAll(".error-text").forEach(el=>el.remove());
+
+  renderMarmitas();
+  renderDrinks();
+  attachQtyEvents();
   renderSummary();
-  setupEvents();
-})();
+  updateStepUI();
+  closePixModal();
+  clearDraft();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function init(){
+  closePixModal();
+  loadDraft();
+
+  renderMarmitas();
+  renderDrinks();
+  attachQtyEvents();
+  renderSummary();
+  updateStepUI();
+
+  $("#customerPhone").value = maskPhone($("#customerPhone").value);
+  $("#addressZip").value = maskCep($("#addressZip").value);
+
+  ["notes","customerName","customerPhone","addressZip","addressDistrict","addressStreet","addressNumber","addressComplement","paymentMethod","changeFor"]
+    .forEach(id=>{
+      $("#"+id).addEventListener("input", saveDraft);
+      $("#"+id).addEventListener("change", saveDraft);
+    });
+
+  $("#customerPhone").addEventListener("input", (e)=>{
+    e.target.value = maskPhone(e.target.value);
+    clearInvalid(e.target);
+    saveDraft();
+  });
+  $("#addressZip").addEventListener("input", (e)=>{
+    e.target.value = maskCep(e.target.value);
+    clearInvalid(e.target);
+    saveDraft();
+  });
+
+  ["customerName","addressDistrict","addressStreet","addressNumber","addressComplement","changeFor"]
+    .forEach(id => $("#"+id).addEventListener("input", (e)=>clearInvalid(e.target)));
+
+  $("#paymentMethod").addEventListener("change", (e)=>{
+    $("#changeField").style.display = e.target.value === "Dinheiro" ? "block" : "none";
+    clearInvalid(e.target);
+    saveDraft();
+  });
+
+  $("#btnPrev").addEventListener("click", ()=>{
+    if(currentStep > 1){ currentStep--; updateStepUI(); saveDraft(); }
+  });
+
+  $("#btnNext").addEventListener("click", ()=>{
+    if(!validateStep(currentStep)) return;
+    if(currentStep < 3){
+      currentStep++;
+      updateStepUI();
+      if(currentStep === 3) renderSummary();
+      saveDraft();
+      return;
+    }
+
+    const order = buildOrder();
+    if(order.payment.method === "PIX"){ openPixModal(); return; }
+
+    const phone = onlyDigits(CONFIG.whatsappNumber);
+    const text = encodeURIComponent(orderMessage(order,false));
+    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+    toast("Pedido enviado com sucesso!");
+    setTimeout(resetAll, 700);
+  });
+
+  $("#btnEditItems").addEventListener("click", ()=>{
+    currentStep = 1;
+    updateStepUI();
+    saveDraft();
+    toast("Você voltou para editar os itens.");
+  });
+
+  $("#btnCopyPix").addEventListener("click", async ()=>{
+    try{
+      await navigator.clipboard.writeText(CONFIG.pixKey);
+      toast("Chave PIX copiada! Abrindo WhatsApp...");
+      const order = buildOrder();
+      const phone = onlyDigits(CONFIG.whatsappNumber);
+      const text = encodeURIComponent(orderMessage(order,true));
+      setTimeout(()=>window.open(`https://wa.me/${phone}?text=${text}`, "_blank"),300);
+    }catch{
+      toast("Não foi possível copiar a chave.");
+    }
+  });
+
+  $("#btnClosePix").addEventListener("click", closePixModal);
+  $("#pixModal").addEventListener("click",(e)=>{ if(e.target.id === "pixModal") closePixModal(); });
+}
+
+init();
