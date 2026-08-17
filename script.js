@@ -7,9 +7,9 @@ const CONFIG = {
 };
 
 const MARMITAS = [
-  { id:"p", name:"Marmita P", desc:"Arroz, feijão, proteína + salada", price:18.90 },
-  { id:"m", name:"Marmita M", desc:"Porção média reforçada", price:22.90 },
-  { id:"g", name:"Marmita G", desc:"Porção grande completa", price:27.90 }
+  { id:"p", name:"Marmita P", desc:"Arroz, feijão, proteína + salada", price:9.90 },
+  { id:"m", name:"Marmita M", desc:"Porção média reforçada", price:14.90 },
+  { id:"g", name:"Marmita G", desc:"Porção grande completa", price:19.90 }
 ];
 
 const DRINKS = [
