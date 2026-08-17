@@ -3,577 +3,149 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Marmita Express • Pedido Rápido</title>
+  <title>Marmita Express • Pedido Passo a Passo</title>
   <meta name="theme-color" content="#16a34a" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg:#f5f7fb;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --line:#e5e7eb;
-      --brand:#16a34a;
-      --brand-dark:#15803d;
-      --accent:#0ea5e9;
-      --danger:#dc2626;
-      --shadow:0 8px 24px rgba(2,6,23,.08);
-      --radius:14px;
-      --radius-sm:10px;
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-    }
-
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-    img{max-width:100%;display:block}
-    button,input,select,textarea{font:inherit}
-
-    .app{
-      max-width:520px;
-      margin:0 auto;
-      padding:10px 12px 110px;
-    }
-
-    .top{
-      position:sticky; top:0; z-index:20;
-      background:linear-gradient(to bottom, #f5f7fb 80%, #f5f7fbcc 100%);
-      backdrop-filter: blur(6px);
-      padding:6px 0 10px;
-    }
-
-    .brand{
-      display:flex;align-items:center;gap:10px;
-      background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
-      border-radius:16px;padding:10px 12px;
-    }
-    .logo{
-      width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-      font-size:21px;background:#dcfce7;color:#166534;font-weight:800
-    }
-    .brand h1{margin:0;font-size:1.02rem;line-height:1.1}
-    .brand p{margin:3px 0 0;color:var(--muted);font-size:.78rem}
-
-    .card{
-      background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-      box-shadow:var(--shadow);padding:12px;margin-top:10px;
-    }
-
-    .section-title{
-      margin:0 0 8px;font-size:.95rem;font-weight:800;
-      display:flex;align-items:center;gap:8px;
-    }
-    .section-sub{margin:0 0 8px;color:var(--muted);font-size:.82rem}
-
-    .list{display:grid;gap:10px}
-    .item{
-      border:1px solid var(--line);border-radius:12px;padding:10px;
-      display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
-      background:#fff;
-    }
-    .item h3{margin:0;font-size:.95rem}
-    .item p{margin:4px 0 0;color:var(--muted);font-size:.78rem}
-    .price{font-weight:800;margin-top:6px;font-size:.95rem}
-
-    .qty{
-      display:flex;align-items:center;gap:8px;
-      border:1px solid var(--line);border-radius:999px;padding:4px;background:#f8fafc;
-    }
-    .qty button{
-      width:30px;height:30px;border:none;border-radius:999px;
-      background:#e2e8f0;color:#0f172a;font-weight:900;font-size:1rem;
-      cursor:pointer;
-    }
-    .qty button:active{transform:scale(.96)}
-    .qty span{min-width:16px;text-align:center;font-weight:800}
-
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .field{display:flex;flex-direction:column;gap:6px}
-    label{font-size:.78rem;color:#334155;font-weight:700}
-    input,select,textarea{
-      width:100%;border:1px solid var(--line);border-radius:10px;
-      padding:11px 10px;background:#fff;color:var(--text);
-    }
-    input:focus,select:focus,textarea:focus{
-      outline:2px solid #bbf7d0;border-color:#86efac;
-    }
-
-    .summary-lines{display:grid;gap:6px}
-    .line{display:flex;justify-content:space-between;font-size:.9rem}
-    .line.total{
-      margin-top:4px;padding-top:8px;border-top:1px dashed var(--line);
-      font-size:1.02rem;font-weight:800;
-    }
-
-    .secure{
-      display:flex;align-items:center;gap:8px;
-      color:#166534;background:#f0fdf4;border:1px solid #bbf7d0;
-      padding:9px;border-radius:10px;font-size:.78rem;font-weight:600
-    }
-
-    .sticky-cta{
-      position:fixed;left:0;right:0;bottom:0;z-index:50;
-      background:#ffffffee;backdrop-filter:blur(8px);
-      border-top:1px solid var(--line);
-      padding:10px 12px calc(10px + var(--safe-bottom));
-    }
-    .sticky-wrap{max-width:520px;margin:0 auto;display:grid;gap:8px}
-    .cta-top{display:flex;justify-content:space-between;font-size:.88rem}
-    .cta-top strong{font-size:1rem}
-    .btn{
-      border:none;border-radius:12px;padding:13px 12px;font-weight:800;font-size:.96rem;
-      width:100%;cursor:pointer;
-    }
-    .btn-primary{background:var(--brand);color:#fff}
-    .btn-primary:active{transform:translateY(1px)}
-    .btn-primary:hover{background:var(--brand-dark)}
-    .btn-wa{
-      background:#25D366;color:#053b1b;font-weight:900
-    }
-    .helper{text-align:center;color:var(--muted);font-size:.75rem}
-
-    .toast{
-      position:fixed;left:50%;transform:translateX(-50%);
-      bottom:90px;background:#0f172a;color:#fff;padding:9px 12px;border-radius:10px;
-      font-size:.82rem;opacity:0;pointer-events:none;transition:.2s;z-index:60;
-    }
-    .toast.show{opacity:1}
-
-    /* Modal PIX */
-    .pix-modal{
-      position:fixed; inset:0; z-index:100;
-      background:rgba(15,23,42,.55);
-      display:none; align-items:center; justify-content:center;
-      padding:16px;
-    }
-    .pix-modal.show{display:flex}
-    .pix-modal-card{
-      width:min(460px, 100%);
-      background:#fff;
-      border-radius:14px;
-      padding:16px;
-      box-shadow:0 20px 40px rgba(2,6,23,.25);
-      border:1px solid #e5e7eb;
-    }
-    .pix-modal-card h3{margin:0 0 6px}
-    .pix-sub{margin:0 0 12px; color:#64748b; font-size:.9rem}
-    .pix-box{
-      border:1px solid #e5e7eb;
-      border-radius:10px;
-      padding:10px;
-      background:#f8fafc;
-      display:grid; gap:6px;
-      font-size:.92rem;
-      word-break:break-word;
-    }
-    .pix-actions{
-      margin-top:12px;
-      display:grid;
-      gap:8px;
-    }
-
-    @media (min-width:700px){
-      .app{padding-top:16px}
-    }
-  </style>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main class="app">
-    <div class="top">
-      <section class="brand">
-        <div class="logo">🍱</div>
-        <div>
-          <h1>Marmita Express</h1>
-          <p>Pedido rápido • entrega em minutos</p>
+    <section class="brand">
+      <div class="logo">🍱</div>
+      <div>
+        <h1>Marmita Express</h1>
+        <p>Pedido rápido em 3 passos</p>
+      </div>
+    </section>
+
+    <section class="stepper">
+      <div class="step active" id="stepIndicator1">1. Itens</div>
+      <div class="step" id="stepIndicator2">2. Entrega</div>
+      <div class="step" id="stepIndicator3">3. Pagamento</div>
+    </section>
+
+    <section class="progress-wrap" aria-label="Progresso do pedido">
+      <div class="progress-bar" id="progressBar"></div>
+    </section>
+    <div class="progress-label" id="progressLabel">33%</div>
+
+    <!-- PASSO 1 -->
+    <section class="card box active" id="step1">
+      <h2>🍛 Escolha sua marmita</h2>
+      <p class="muted">Selecione 1 tamanho, bebida opcional e observação.</p>
+
+      <div class="choices" id="marmitaChoices"></div>
+
+      <h2 class="mt">🥤 Bebida </h2>
+      <div class="choices" id="drinkChoices"></div>
+
+      <div class="grid mt">
+        <div class="field">
+          <label for="notes">Observação do prato</label>
+          <textarea id="notes" rows="3" placeholder="Ex.: sem cebola, retirar salada..."></textarea>
         </div>
-      </section>
-    </div>
-
-    <section class="card">
-      <h2 class="section-title">🍛 Escolha sua marmita</h2>
-      <p class="section-sub">Toque em + para adicionar ao pedido</p>
-      <div id="mealList" class="list"></div>
+      </div>
     </section>
 
-    <section class="card">
-      <h2 class="section-title">🥤 Bebidas (opcional)</h2>
-      <div id="drinkList" class="list"></div>
-    </section>
+    <!-- PASSO 2 -->
+    <section class="card box" id="step2">
+      <h2>📍 Dados para entrega</h2>
+      <p class="muted">Preencha todos os campos obrigatórios.</p>
 
-    <section class="card">
-      <h2 class="section-title">📍 Entrega</h2>
-      <div class="grid-2">
-        <div class="field" style="grid-column:1/-1">
-          <label>Nome *</label>
-          <input id="customerName" autocomplete="name" placeholder="Seu nome" />
+      <div class="grid">
+        <div class="field">
+          <label>Nome completo *</label>
+          <input id="customerName" />
         </div>
         <div class="field">
           <label>WhatsApp *</label>
-          <input id="customerPhone" inputmode="tel" autocomplete="tel" placeholder="(11) 99999-9999" />
+          <input id="customerPhone" placeholder="(11) 99999-9999" />
+        </div>
+        <div class="field">
+          <label>CEP *</label>
+          <input id="addressZip" placeholder="00000-000" />
         </div>
         <div class="field">
           <label>Bairro *</label>
-          <input id="addressDistrict" placeholder="Seu bairro" />
+          <input id="addressDistrict" />
         </div>
-        <div class="field" style="grid-column:1/-1">
+        <div class="field">
           <label>Rua / Avenida *</label>
-          <input id="addressStreet" placeholder="Rua Exemplo" />
+          <input id="addressStreet" />
         </div>
         <div class="field">
           <label>Número *</label>
-          <input id="addressNumber" placeholder="123" />
+          <input id="addressNumber" />
         </div>
         <div class="field">
-          <label>Complemento</label>
-          <input id="addressComplement" placeholder="Apto, bloco, referência" />
+          <label>Complemento *</label>
+          <input id="addressComplement" placeholder="Casa/Apto/Referência" />
         </div>
       </div>
     </section>
 
-    <section class="card">
-      <h2 class="section-title">💳 Pagamento</h2>
-      <div class="grid-2">
-        <div class="field" style="grid-column:1/-1">
-          <label>Forma de pagamento *</label>
+    <!-- PASSO 3 -->
+    <section class="card box" id="step3">
+      <h2>💳 Forma de pagamento</h2>
+      <p class="muted">Escolha a forma de pagamento para finalizar.</p>
+
+      <div class="grid">
+        <div class="field">
+          <label>Pagamento *</label>
           <select id="paymentMethod">
             <option value="">Selecione</option>
-            <option>PIX</option>
-            <option>Dinheiro</option>
-            <option>Cartão na entrega</option>
+            <option value="PIX">PIX</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Cartão na entrega">Cartão na entrega</option>
           </select>
         </div>
-        <div class="field" id="changeField" style="display:none;grid-column:1/-1">
-          <label>Troco para quanto?</label>
+        <div class="field" id="changeField" style="display:none">
+          <label>Troco para quanto? *</label>
           <input id="changeFor" type="number" min="0" step="0.01" placeholder="0,00" />
         </div>
-        <div class="field" style="grid-column:1/-1">
-          <label>Observações</label>
-          <textarea id="notes" rows="2" placeholder="Ex.: sem cebola, retirar salada..."></textarea>
-        </div>
       </div>
-    </section>
 
-    <section class="card">
-      <h2 class="section-title">🧾 Resumo</h2>
-      <div id="summaryLines" class="summary-lines"></div>
-      <div class="secure" style="margin-top:10px">
-        🔒 Seus dados são usados apenas para entrega do pedido.
+      <h2 class="mt">🧾 Resumo</h2>
+      <div class="summary" id="summaryBox"></div>
+
+      <div class="edit-items-wrap">
+        <button class="btn-link" id="btnEditItems" type="button">✏️ Editar itens</button>
       </div>
     </section>
   </main>
 
-  <div class="sticky-cta">
-    <div class="sticky-wrap">
-      <div class="cta-top">
-        <span>Total do pedido</span>
-        <strong id="totalCta">R$ 0,00</strong>
-      </div>
-      <button id="btnFinish" class="btn btn-primary">Finalizar pedido</button>
-      <button id="btnWhats" class="btn btn-wa">Finalizar com WhatsApp</button>
-      <div class="helper">Confirmação rápida e segura</div>
+  <!-- Navegação -->
+  <div class="nav">
+    <div class="nav-wrap">
+      <button class="btn prev" id="btnPrev">Voltar</button>
+      <button class="btn next" id="btnNext">Próximo</button>
     </div>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <!-- Modal PIX -->
-  <div id="pixModal" class="pix-modal" aria-hidden="true">
-    <div class="pix-modal-card">
+  <div id="pixModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
       <h3>Pagamento via PIX</h3>
-      <p class="pix-sub">Faça o pagamento e envie o comprovante no WhatsApp para agilizar seu pedido.</p>
+      <p class="muted">Copie a chave e envie o comprovante no WhatsApp.</p>
 
-      <div class="pix-box">
-        <div><strong>Tipo da chave:</strong> <span id="pixKeyType"></span></div>
-        <div><strong>Chave PIX:</strong> <span id="pixKey"></span></div>
-        <div><strong>Nome:</strong> <span id="pixHolder"></span></div>
-        <div><strong>Banco:</strong> <span id="pixBank"></span></div>
+      <div class="modal-box">
+        <div><strong>Tipo:</strong> CPF</div>
+        <div><strong>Chave:</strong> 05674008914</div>
+        <div><strong>Nome:</strong> THOMAZ VITINISKI</div>
+        <div><strong>Banco:</strong> Efí</div>
       </div>
 
-      <div class="pix-actions">
-        <button id="btnCopyPix" class="btn btn-wa" type="button">Copiar chave PIX e abrir WhatsApp</button>
-        <button id="btnClosePix" class="btn btn-primary" type="button">Fechar</button>
+      <div class="modal-actions">
+        <button class="btn wa" id="btnCopyPix">Copiar chave PIX e abrir WhatsApp</button>
+        <button class="btn next" id="btnClosePix">Fechar</button>
       </div>
     </div>
   </div>
 
-  <script>
-    const CONFIG = {
-      restaurantName: "Marmita Express",
-      deliveryFee: 5.00,
-      whatsappNumber: "5511999999999", // <-- TROQUE para seu número real
-      pix: {
-        keyType: "CPF",
-        key: "05674008914",
-        holder: "THOMAZ VITINISKI",
-        bank: "Efí"
-      }
-    };
-
-    const MEALS = [
-      { id:"m1", name:"Marmita P", desc:"Arroz, feijão, proteína + salada", price:18.90 },
-      { id:"m2", name:"Marmita M", desc:"Porção média reforçada", price:22.90 },
-      { id:"m3", name:"Marmita G", desc:"Porção grande completa", price:27.90 },
-      { id:"m4", name:"Fit (Low Carb)", desc:"Proteína + legumes + salada", price:26.50 }
-    ];
-
-    const DRINKS = [
-      { id:"d1", name:"Coca-Cola Lata", desc:"350ml", price:6.00 },
-      { id:"d2", name:"Guaraná Lata", desc:"350ml", price:5.50 },
-      { id:"d3", name:"Água 500ml", desc:"Sem gás", price:3.50 }
-    ];
-
-    const state = { meals:{}, drinks:{} };
-
-    let pendingPixOrder = null;
-
-    const $ = s => document.querySelector(s);
-    const money = v => v.toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
-
-    function toast(msg){
-      const t = $("#toast");
-      t.textContent = msg;
-      t.classList.add("show");
-      setTimeout(()=>t.classList.remove("show"), 1800);
-    }
-
-    function itemTemplate(item, group){
-      const q = state[group][item.id] || 0;
-      return `
-        <article class="item">
-          <div>
-            <h3>${item.name}</h3>
-            <p>${item.desc}</p>
-            <div class="price">${money(item.price)}</div>
-          </div>
-          <div class="qty">
-            <button data-g="${group}" data-id="${item.id}" data-a="dec">−</button>
-            <span id="q-${group}-${item.id}">${q}</span>
-            <button data-g="${group}" data-id="${item.id}" data-a="inc">+</button>
-          </div>
-        </article>
-      `;
-    }
-
-    function renderItems(){
-      $("#mealList").innerHTML = MEALS.map(i => itemTemplate(i,"meals")).join("");
-      $("#drinkList").innerHTML = DRINKS.map(i => itemTemplate(i,"drinks")).join("");
-
-      document.querySelectorAll(".qty button").forEach(btn=>{
-        btn.onclick = () => {
-          const g = btn.dataset.g;
-          const id = btn.dataset.id;
-          const act = btn.dataset.a;
-          const cur = state[g][id] || 0;
-          state[g][id] = act === "inc" ? cur + 1 : Math.max(0, cur - 1);
-          $(`#q-${g}-${id}`).textContent = state[g][id];
-          renderSummary();
-        };
-      });
-    }
-
-    function selectedLines(){
-      const lines = [];
-
-      for(const item of MEALS){
-        const q = state.meals[item.id] || 0;
-        if(q>0) lines.push({ label:`${item.name} x${q}`, total:item.price*q });
-      }
-      for(const item of DRINKS){
-        const q = state.drinks[item.id] || 0;
-        if(q>0) lines.push({ label:`${item.name} x${q}`, total:item.price*q });
-      }
-
-      return lines;
-    }
-
-    function calcTotals(){
-      const lines = selectedLines();
-      const subtotal = lines.reduce((s,i)=>s+i.total,0);
-      const delivery = subtotal > 0 ? CONFIG.deliveryFee : 0;
-      const total = subtotal + delivery;
-      return { lines, subtotal, delivery, total };
-    }
-
-    function renderSummary(){
-      const { lines, subtotal, delivery, total } = calcTotals();
-      const root = $("#summaryLines");
-
-      if(!lines.length){
-        root.innerHTML = `<div class="line"><span>Nenhum item selecionado</span><strong>—</strong></div>`;
-      }else{
-        root.innerHTML = lines.map(l => `
-          <div class="line"><span>${l.label}</span><strong>${money(l.total)}</strong></div>
-        `).join("") + `
-          <div class="line"><span>Entrega</span><strong>${money(delivery)}</strong></div>
-          <div class="line total"><span>Total</span><strong>${money(total)}</strong></div>
-        `;
-      }
-
-      $("#totalCta").textContent = money(total);
-    }
-
-    function onlyDigits(v){ return (v || "").replace(/\D/g,""); }
-
-    function buildOrder(){
-      const { lines, subtotal, delivery, total } = calcTotals();
-      return {
-        customer: {
-          name: $("#customerName").value.trim(),
-          phone: $("#customerPhone").value.trim()
-        },
-        address: {
-          district: $("#addressDistrict").value.trim(),
-          street: $("#addressStreet").value.trim(),
-          number: $("#addressNumber").value.trim(),
-          complement: $("#addressComplement").value.trim()
-        },
-        payment: {
-          method: $("#paymentMethod").value,
-          changeFor: Number($("#changeFor").value || 0)
-        },
-        notes: $("#notes").value.trim(),
-        items: lines,
-        totals: { subtotal, delivery, total }
-      };
-    }
-
-    function validate(order){
-      if(!order.items.length) return "Adicione pelo menos 1 item.";
-      if(!order.customer.name) return "Informe seu nome.";
-      if(!order.customer.phone) return "Informe seu WhatsApp.";
-      if(!order.address.district || !order.address.street || !order.address.number) return "Preencha seu endereço.";
-      if(!order.payment.method) return "Selecione a forma de pagamento.";
-      return null;
-    }
-
-    function orderMessage(order, includePix = false){
-      const itemsText = order.items.map(i => `- ${i.label} (${money(i.total)})`).join("\n");
-
-      const base = [
-        `*Pedido - ${CONFIG.restaurantName}*`,
-        ``,
-        `*Cliente:* ${order.customer.name}`,
-        `*WhatsApp:* ${order.customer.phone}`,
-        ``,
-        `*Itens:*`,
-        itemsText,
-        ``,
-        `*Subtotal:* ${money(order.totals.subtotal)}`,
-        `*Entrega:* ${money(order.totals.delivery)}`,
-        `*Total:* ${money(order.totals.total)}`,
-        ``,
-        `*Endereço:* ${order.address.street}, ${order.address.number} - ${order.address.district}`,
-        order.address.complement ? `*Complemento:* ${order.address.complement}` : "",
-        `*Pagamento:* ${order.payment.method}`,
-        (order.payment.method === "Dinheiro" && order.payment.changeFor > 0) ? `*Troco para:* ${money(order.payment.changeFor)}` : "",
-        order.notes ? `*Observações:* ${order.notes}` : ""
-      ].filter(Boolean);
-
-      if (includePix) {
-        base.push(
-          ``,
-          `*Dados PIX para pagamento:*`,
-          `- Tipo: ${CONFIG.pix.keyType}`,
-          `- Chave: ${CONFIG.pix.key}`,
-          `- Nome: ${CONFIG.pix.holder}`,
-          `- Banco: ${CONFIG.pix.bank}`,
-          ``,
-          `Acabei de realizar o pagamento via PIX. Vou enviar o comprovante por aqui.`
-        );
-      }
-
-      return base.join("\n");
-    }
-
-    function clearAll(){
-      state.meals = {};
-      state.drinks = {};
-      ["customerName","customerPhone","addressDistrict","addressStreet","addressNumber","addressComplement","paymentMethod","changeFor","notes"]
-        .forEach(id => { const el = $("#"+id); if(el) el.value = ""; });
-      $("#changeField").style.display = "none";
-      renderItems();
-      renderSummary();
-      pendingPixOrder = null;
-      window.scrollTo({top:0,behavior:"smooth"});
-    }
-
-    function openPixModal(){
-      $("#pixKeyType").textContent = CONFIG.pix.keyType;
-      $("#pixKey").textContent = CONFIG.pix.key;
-      $("#pixHolder").textContent = CONFIG.pix.holder;
-      $("#pixBank").textContent = CONFIG.pix.bank;
-      $("#pixModal").classList.add("show");
-      $("#pixModal").setAttribute("aria-hidden", "false");
-    }
-
-    function closePixModal(){
-      $("#pixModal").classList.remove("show");
-      $("#pixModal").setAttribute("aria-hidden", "true");
-    }
-
-    function init(){
-      renderItems();
-      renderSummary();
-
-      $("#paymentMethod").addEventListener("change", (e)=>{
-        $("#changeField").style.display = e.target.value === "Dinheiro" ? "block" : "none";
-      });
-
-      $("#btnFinish").addEventListener("click", ()=>{
-        const order = buildOrder();
-        const err = validate(order);
-        if(err) return toast(err);
-
-        if(order.payment.method === "PIX"){
-          pendingPixOrder = order;
-          openPixModal();
-          return;
-        }
-
-        toast("Pedido finalizado com sucesso!");
-        setTimeout(clearAll, 700);
-      });
-
-      $("#btnWhats").addEventListener("click", ()=>{
-        const order = buildOrder();
-        const err = validate(order);
-        if(err) return toast(err);
-
-        const phone = onlyDigits(CONFIG.whatsappNumber);
-        const text = encodeURIComponent(orderMessage(order, false));
-        window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
-      });
-
-      $("#btnCopyPix").addEventListener("click", async () => {
-        try{
-          await navigator.clipboard.writeText(CONFIG.pix.key);
-          toast("Chave PIX copiada! Abrindo WhatsApp...");
-
-          const order = pendingPixOrder || buildOrder();
-          const phone = onlyDigits(CONFIG.whatsappNumber);
-          const text = encodeURIComponent(orderMessage(order, true));
-
-          setTimeout(() => {
-            window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
-          }, 350);
-        }catch{
-          toast("Não foi possível copiar automaticamente.");
-        }
-      });
-
-      $("#btnClosePix").addEventListener("click", () => {
-        closePixModal();
-        pendingPixOrder = null;
-        toast("Pedido aguardando pagamento PIX.");
-      });
-
-      $("#pixModal").addEventListener("click", (e)=>{
-        if(e.target.id === "pixModal") closePixModal();
-      });
-    }
-
-    init();
-  </script>
+  <script src="./script.js"></script>
 </body>
 </html>
