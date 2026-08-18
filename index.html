@@ -8,6 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -15,7 +24,7 @@
     <section class="brand">
       <div class="logo">🍱</div>
       <div>
-        <h1>Marmita Express</h1>
+        <h1>Luan Restaurante & Marmitaria</h1>
         <p>Pedido rápido em 3 passos</p>
       </div>
     </section>
@@ -33,55 +42,67 @@
 
     <!-- PASSO 1 -->
     <section class="card box active" id="step1">
-      <h2>🍛 Escolha sua marmita</h2>
-      <p class="muted">Selecione 1 tamanho, bebida opcional e observação.</p>
+      <h2>🍛 Escolha suas marmitas</h2>
+      <p class="muted">Adicione quantas quiser. A observação aparece quando quantidade > 0.</p>
 
       <div class="choices" id="marmitaChoices"></div>
 
-      <h2 class="mt">🥤 Bebida </h2>
+      <h2 class="mt">🥤 Bebidas (opcional)</h2>
       <div class="choices" id="drinkChoices"></div>
 
-      <div class="grid mt">
-        <div class="field">
-          <label for="notes">Observação do prato</label>
-          <textarea id="notes" rows="3" placeholder="Ex.: sem cebola, retirar salada..."></textarea>
-        </div>
+      <div class="step1-actions">
+        <button type="button" class="btn btn-clear" id="btnClearCart">🗑️ Limpar carrinho</button>
       </div>
     </section>
 
     <!-- PASSO 2 -->
     <section class="card box" id="step2">
       <h2>📍 Dados para entrega</h2>
-      <p class="muted">Preencha todos os campos obrigatórios.</p>
+      <p class="muted">Confirme sua localização no mapa e preencha os dados abaixo.</p>
 
       <div class="grid">
+        <!-- MAPA PRIMEIRO -->
+        <div class="field">
+          <label>📍 Mapa da localização *</label>
+          <div id="map"></div>
+          <small class="hint">Você pode clicar no mapa ou arrastar o pin para o ponto exato.</small>
+        </div>
+
+        <div class="field">
+          <button type="button" class="btn btn-location" id="btnUseLocation">📍 Usar minha localização</button>
+          <small class="hint" id="locationHint">Ao entrar nesta etapa, tentamos localizar automaticamente.</small>
+        </div>
+
         <div class="field">
           <label>Nome completo *</label>
           <input id="customerName" />
         </div>
+
         <div class="field">
           <label>WhatsApp *</label>
           <input id="customerPhone" placeholder="(11) 99999-9999" />
         </div>
-        <div class="field">
-          <label>CEP *</label>
-          <input id="addressZip" placeholder="00000-000" />
-        </div>
+
         <div class="field">
           <label>Bairro *</label>
-          <input id="addressDistrict" />
+          <input id="addressDistrict" placeholder="Ex.: Centro" />
+          <small class="hint" id="districtHint">Frete R$ 5,00 para pedidos abaixo de R$ 25,00. Acima disso, frete grátis.</small>
         </div>
+
         <div class="field">
           <label>Rua / Avenida *</label>
           <input id="addressStreet" />
         </div>
+
         <div class="field">
           <label>Número *</label>
           <input id="addressNumber" />
         </div>
+
         <div class="field">
-          <label>Complemento *</label>
-          <input id="addressComplement" placeholder="Casa/Apto/Referência" />
+          <label>Ponto de referência *</label>
+          <input id="addressReference" placeholder="Ex.: Portão azul, bloco B apto 203..." />
+          <small class="hint">Se for prédio/condomínio, informe bloco e apartamento.</small>
         </div>
       </div>
     </section>
@@ -110,13 +131,14 @@
       <h2 class="mt">🧾 Resumo</h2>
       <div class="summary" id="summaryBox"></div>
 
+      <div class="rule-box" id="minimumRuleBox"></div>
+
       <div class="edit-items-wrap">
         <button class="btn-link" id="btnEditItems" type="button">✏️ Editar itens</button>
       </div>
     </section>
   </main>
 
-  <!-- Navegação -->
   <div class="nav">
     <div class="nav-wrap">
       <button class="btn prev" id="btnPrev">Voltar</button>
@@ -126,7 +148,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- Modal PIX -->
   <div id="pixModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3>Pagamento via PIX</h3>
@@ -145,6 +166,13 @@
       </div>
     </div>
   </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 
   <script src="./script.js"></script>
 </body>
