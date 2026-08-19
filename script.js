@@ -1,71 +1,105 @@
 const CONFIG = {
   restaurantName: "Marmita Express",
-  deliveryFee: 5.00,
-  freeDeliveryMinimum: 25.00,
-  whatsappNumber: "5548991998998",
+  deliveryFee: 5,
+  freeDeliveryMinimum: 24.99,
+  whatsappNumber: "5511999999999",
   pixKey: "05674008914",
-  draftKey: "marmita_draft_v12_confirm_entrega"
+  draftKey: "marmita_v42_ok"
 };
 
-// Local inicial: Av. Universitária, 4380 - Criciúma/SC (aproximado)
 const DEFAULT_MAP_CENTER = { lat: -28.6736, lng: -49.3697, zoom: 16 };
 
 const MARMITAS = [
-  { id:"p", name:"Marmita P", desc:"Arroz, feijão, proteína + salada", price:9.99 },
-  { id:"m", name:"Marmita M", desc:"Porção média reforçada", price:14.99 },
-  { id:"g", name:"Marmita G", desc:"Porção grande completa", price:19.99 }
+  { id: "p", name: "Marmita P", desc: "Arroz, feijão, proteína + salada", price: 9.99, img: "./img/marmitex.png" },
+  { id: "m", name: "Marmita M", desc: "Porção média reforçada", price: 14.99, img: "./img/marmitex.png" },
+  { id: "g", name: "Marmita G", desc: "Porção grande completa", price: 19.99, img: "./img/marmitex.png" }
 ];
 
 const DRINKS = [
-  { id:"coca_lata", name:"Coca-Cola Lata", desc:"350ml", price:6.00 },
-  { id:"coca_600", name:"Coca-Cola 600ml", desc:"Garrafa", price:9.00 },
-  { id:"coca_2l", name:"Coca-Cola 2L", desc:"Garrafa família", price:14.00 },
-  { id:"gua_lata", name:"Guaraná Lata", desc:"350ml", price:6.00 },
-  { id:"gua_600", name:"Guaraná 600ml", desc:"Garrafa", price:9.00 },
-  { id:"gua_2l", name:"Guaraná 2L", desc:"Garrafa família", price:14.00 },
-  { id:"suk_lata", name:"Sukita Laranja Lata", desc:"350ml", price:6.00 },
-  { id:"suk_600", name:"Sukita Laranja 600ml", desc:"Garrafa", price:9.00 },
-  { id:"suk_2l", name:"Sukita Laranja 2L", desc:"Garrafa família", price:14.00 },
-  { id:"agua_sem_gas", name:"Água 500ml sem gás", desc:"Garrafa", price:3.50 },
-  { id:"agua_com_gas", name:"Água 500ml com gás", desc:"Garrafa", price:4.00 }
-];
+  { id: "none", name: "Sem bebida", price: 0, img: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=300&q=60" },
 
+  { id: "coca_lata", name: "Coca-Cola Lata 350ml", price: 6.0, img: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=300&q=60" },
+  { id: "coca_2l", name: "Coca-Cola 2L", price: 14.0, img: "https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=300&q=60" },
+
+  { id: "guarana_lata", name: "Guaraná Lata 350ml", price: 6.0, img: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=300&q=60" },
+  { id: "guarana_2l", name: "Guaraná 2L", price: 14.0, img: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=300&q=60" },
+
+  { id: "agua_com_gas", name: "Água com gás 500ml", price: 4.0, img: "https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=300&q=60" },
+  { id: "agua_sem_gas", name: "Água sem gás 500ml", price: 3.5, img: "https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=300&q=60" }
+];
 let currentStep = 1;
-let selectedMarmitas = {};
-let selectedDrinks = {};
-let marmitaNotes = {};
+let addressType = "Casa";
+let cartItems = [];
+let selectedPayment = "";
 
 let map = null;
 let marker = null;
 let selectedCoords = null;
 let autoLocatedOnce = false;
 
-const $ = (s) => document.querySelector(s);
-const money = (v) => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-const onlyDigits = (v) => (v||"").replace(/\D/g,"");
+let modalMode = "create";
+let editingItemId = null;
+let currentMarmita = null;
 
-function toast(msg){
+// sem limite de bebidas
+let selectedDrinkIds = ["none"];
+
+const $ = (s) => document.querySelector(s);
+const money = (v) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const onlyDigits = (v) => (v || "").replace(/\D/g, "");
+const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+function toast(msg) {
   const el = $("#toast");
-  if(!el) return;
+  if (!el) return;
   el.textContent = msg;
   el.classList.add("show");
-  setTimeout(()=>el.classList.remove("show"), 1800);
+  setTimeout(() => el.classList.remove("show"), 1700);
 }
 
-function maskPhone(v){
-  const d = onlyDigits(v).slice(0,11);
-  if(d.length <= 2) return d;
-  if(d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`;
-  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+function pulseCartBar() {
+  const btn = $("#btnCartAction");
+  if (!btn) return;
+  btn.classList.remove("pulse");
+  void btn.offsetWidth;
+  btn.classList.add("pulse");
 }
 
-function getDeliveryFee(subtotal){
-  return subtotal >= CONFIG.freeDeliveryMinimum ? 0 : CONFIG.deliveryFee;
+function animateFlyToCart(fromEl) {
+  const cart = $("#btnCartAction");
+  if (!fromEl || !cart) return;
+
+  const a = fromEl.getBoundingClientRect();
+  const b = cart.getBoundingClientRect();
+
+  const dot = document.createElement("div");
+  dot.className = "fly-dot";
+  dot.style.left = `${a.left + a.width / 2}px`;
+  dot.style.top = `${a.top + a.height / 2}px`;
+  document.body.appendChild(dot);
+
+  const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+  const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+
+  dot.animate(
+    [
+      { transform: "translate(0,0) scale(1)", opacity: 1 },
+      { transform: `translate(${dx}px, ${dy}px) scale(.35)`, opacity: 0.55 }
+    ],
+    { duration: 540, easing: "cubic-bezier(.2,.8,.2,1)" }
+  ).onfinish = () => dot.remove();
 }
 
-/* ===== MAPA ===== */
-function initMap(){
-  if(map || !document.getElementById("map")) return;
+function maskPhone(v) {
+  const d = onlyDigits(v).slice(0, 11);
+  if (d.length <= 2) return d;
+  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/* MAPA */
+function initMap() {
+  if (map || !document.getElementById("map")) return;
 
   map = L.map("map").setView([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_CENTER.zoom);
 
@@ -77,288 +111,383 @@ function initMap(){
   marker = L.marker([DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], { draggable: true }).addTo(map);
   selectedCoords = { lat: DEFAULT_MAP_CENTER.lat, lng: DEFAULT_MAP_CENTER.lng };
 
-  marker.on("dragend", async () => {
-    const pos = marker.getLatLng();
-    selectedCoords = { lat: pos.lat, lng: pos.lng };
-    await fillAddressFromCoords(pos.lat, pos.lng, false);
+  marker.on("dragend", () => {
+    const p = marker.getLatLng();
+    selectedCoords = { lat: p.lat, lng: p.lng };
     saveDraft();
   });
 
-  map.on("click", async (e) => {
+  map.on("click", (e) => {
     marker.setLatLng(e.latlng);
     selectedCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
-    await fillAddressFromCoords(e.latlng.lat, e.latlng.lng, false);
     saveDraft();
   });
 
-  setTimeout(()=> map.invalidateSize(), 300);
+  setTimeout(() => map.invalidateSize(), 260);
 }
 
-function setMapLocation(lat, lng, zoom = 17){
-  if(!map || !marker) return;
+function setMapLocation(lat, lng, zoom = 17) {
+  if (!map || !marker) return;
   map.setView([lat, lng], zoom);
   marker.setLatLng([lat, lng]);
   selectedCoords = { lat, lng };
 }
 
-async function reverseGeocode(lat, lon){
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
-  const res = await fetch(url, { headers: { "Accept": "application/json" } });
-  if(!res.ok) throw new Error("Falha geocoding");
-  return res.json();
-}
-
-async function fillAddressFromCoords(lat, lng, showToast = true){
-  try{
-    const data = await reverseGeocode(lat, lng);
-    const a = data.address || {};
-
-    const road = a.road || a.pedestrian || a.cycleway || "";
-    const suburb = a.suburb || a.neighbourhood || a.city_district || "";
-
-    if(road && !$("#addressStreet")?.value.trim()) $("#addressStreet").value = road;
-    if(suburb && !$("#addressDistrict")?.value.trim()) $("#addressDistrict").value = suburb;
-
-    const locationHint = $("#locationHint");
-    if(locationHint) locationHint.textContent = "Pin atualizado no mapa. Confira rua, número e referência.";
-    renderSummary();
-    if(showToast) toast("Localização atualizada no mapa.");
-  }catch{
-    if(showToast) toast("Não foi possível obter endereço pelo mapa.");
-  }
-}
-
-function autoLocateOnStep2(){
-  if(autoLocatedOnce) return;
+function autoLocateOnStep2() {
+  if (autoLocatedOnce) return;
   autoLocatedOnce = true;
+  if (!navigator.geolocation) return;
 
-  if(!navigator.geolocation){
-    if($("#locationHint")) $("#locationHint").textContent = "Geolocalização não suportada neste dispositivo.";
-    return;
-  }
-
-  if($("#locationHint")) $("#locationHint").textContent = "Detectando sua localização atual...";
-
-  navigator.geolocation.getCurrentPosition(async (pos)=>{
-    try{
-      const { latitude, longitude } = pos.coords;
-      initMap();
-      setMapLocation(latitude, longitude, 18);
-      await fillAddressFromCoords(latitude, longitude, false);
-      if($("#locationHint")) $("#locationHint").textContent = "Localização detectada automaticamente.";
-      saveDraft();
-      renderSummary();
-    }catch{
-      if($("#locationHint")) $("#locationHint").textContent = "Não foi possível aplicar localização automática.";
-    }
-  }, ()=>{
-    if($("#locationHint")) $("#locationHint").textContent = "Permissão negada. Use o botão 'Usar minha localização'.";
-  }, {
-    enableHighAccuracy: true,
-    timeout: 12000,
-    maximumAge: 0
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const { latitude, longitude } = pos.coords;
+    initMap();
+    setMapLocation(latitude, longitude, 18);
+    saveDraft();
   });
 }
 
-function useMyLocation(){
-  if(!navigator.geolocation){
-    toast("Geolocalização não suportada neste dispositivo.");
+function useMyLocation() {
+  if (!navigator.geolocation) {
+    toast("Geolocalização não suportada.");
     return;
   }
 
-  if($("#locationHint")) $("#locationHint").textContent = "Obtendo sua localização...";
-  navigator.geolocation.getCurrentPosition(async (pos)=>{
-    try{
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
       const { latitude, longitude } = pos.coords;
       initMap();
       setMapLocation(latitude, longitude, 18);
-      await fillAddressFromCoords(latitude, longitude, false);
       saveDraft();
-      toast("Localização capturada com sucesso!");
-    }catch{
-      toast("Falha ao aplicar localização no mapa.");
-    }
-  }, ()=>{
-    if($("#locationHint")) $("#locationHint").textContent = "Permissão de localização negada.";
-    toast("Você negou a permissão de localização.");
-  }, {
-    enableHighAccuracy: true,
-    timeout: 12000,
-    maximumAge: 0
-  });
+      toast("Localização capturada.");
+    },
+    () => toast("Você negou a localização.")
+  );
 }
 
-/* ===== ITENS ===== */
-function itemCardTemplate(item, group, qty){
-  const hasObs = group === "marmita";
-  const showObs = hasObs && qty > 0;
-  const obsValue = hasObs ? (marmitaNotes[item.id] || "") : "";
+/* RENDER MARMITAS */
+function renderMarmitas() {
+  const list = $("#marmitaChoices");
+  if (!list) return;
 
-  return `
+  list.innerHTML = MARMITAS.map((item) => `
     <article class="choice">
-      <div style="width:100%">
-        <strong>${item.name}</strong><br/>
-        <small>${item.desc}</small>
-
-        ${showObs ? `
-          <div class="item-obs-wrap">
-            <textarea
-              class="item-obs"
-              data-note-id="${item.id}"
-              placeholder="Observação para ${item.name} (ex: sem feijão, sem salada)..."
-            >${obsValue}</textarea>
+      <img class="item-thumb" src="${item.img}" alt="${item.name}" loading="lazy" />
+      <div class="choice-main">
+        <div class="choice-head">
+          <div>
+            <strong>${item.name}</strong><br/>
+            <small>${item.desc}</small>
           </div>
-        ` : ""}
-      </div>
-
-      <div style="display:flex;align-items:center;gap:10px;min-width:max-content">
-        <span class="price">${money(item.price)}</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <button type="button" data-group="${group}" data-id="${item.id}" data-action="dec" class="btn prev" style="padding:4px 10px;border-radius:10px">-</button>
-          <strong id="qty-${group}-${item.id}" style="min-width:18px;text-align:center">${qty}</strong>
-          <button type="button" data-group="${group}" data-id="${item.id}" data-action="inc" class="btn next" style="padding:4px 10px;border-radius:10px">+</button>
+          <span class="price">${money(item.price)}</span>
+        </div>
+        <div class="choice-actions">
+          
+          <button type="button" class="quick-add" data-open-modal="${item.id}">Adicionar</button>
         </div>
       </div>
     </article>
-  `;
+  `).join("");
+
+  document.querySelectorAll("[data-open-modal]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const marmita = MARMITAS.find((m) => m.id === btn.dataset.openModal);
+      openItemModalForCreate(marmita);
+    });
+  });
 }
 
-function renderMarmitas(){
-  $("#marmitaChoices").innerHTML = MARMITAS.map(item =>
-    itemCardTemplate(item, "marmita", selectedMarmitas[item.id] || 0)
-  ).join("");
-}
-function renderDrinks(){
-  $("#drinkChoices").innerHTML = DRINKS.map(item =>
-    itemCardTemplate(item, "drink", selectedDrinks[item.id] || 0)
-  ).join("");
-}
-function rebindStep1Interactions(){
-  attachQtyEvents();
-  attachMarmitaObsEvents();
+/* MODAL MARMITA */
+function renderDrinkGrid(selected = []) {
+  const wrap = $("#drinkGrid");
+  if (!wrap) return;
+
+  wrap.innerHTML = DRINKS.map((d) => `
+    <button type="button" class="drink-card ${selected.includes(d.id) ? "selected" : ""}" data-drink="${d.id}">
+      <img src="${d.img}" alt="${d.name}" loading="lazy" />
+      <span class="d-name">${d.name}</span>
+      <span class="d-price">${d.price > 0 ? money(d.price) : "Sem custo"}</span>
+    </button>
+  `).join("");
+
+  wrap.querySelectorAll("[data-drink]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.drink;
+
+      if (id === "none") {
+        selectedDrinkIds = ["none"];
+      } else {
+        selectedDrinkIds = selectedDrinkIds.filter((x) => x !== "none");
+
+        if (selectedDrinkIds.includes(id)) {
+          selectedDrinkIds = selectedDrinkIds.filter((x) => x !== id);
+        } else {
+          selectedDrinkIds.push(id); // sem limite
+        }
+
+        if (selectedDrinkIds.length === 0) selectedDrinkIds = ["none"];
+      }
+
+      renderDrinkGrid(selectedDrinkIds);
+    });
+  });
 }
 
-function attachQtyEvents(){
-  document.querySelectorAll("button[data-group]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const group = btn.dataset.group;
-      const id = btn.dataset.id;
-      const action = btn.dataset.action;
+function clearItemModalFields() {
+  const note = $("#comboNote");
+  if (note) note.value = "";
+  selectedDrinkIds = ["none"];
+  renderDrinkGrid(selectedDrinkIds);
+}
 
-      const stateObj = group === "marmita" ? selectedMarmitas : selectedDrinks;
-      const cur = stateObj[id] || 0;
-      const next = action === "inc" ? cur + 1 : Math.max(0, cur - 1);
-      stateObj[id] = next;
+function openItemModal() {
+  const m = $("#itemModal");
+  if (!m) return;
+  m.classList.add("show");
+  m.setAttribute("aria-hidden", "false");
+}
 
-      renderMarmitas();
-      renderDrinks();
-      rebindStep1Interactions();
-      clearInvalidById("marmitaChoices");
+function closeItemModal() {
+  const m = $("#itemModal");
+  if (!m) return;
+  m.classList.remove("show");
+  m.setAttribute("aria-hidden", "true");
+}
+
+function openItemModalForCreate(marmita) {
+  if (!marmita) return;
+  modalMode = "create";
+  editingItemId = null;
+  currentMarmita = marmita;
+
+  $("#itemModalTitle").textContent = `Configurar ${marmita.name}`;
+  $("#itemModalBasePrice").textContent = `Preço base: ${money(marmita.price)}`;
+  $("#btnSaveItemModal").textContent = "Adicionar à sacola";
+
+  clearItemModalFields();
+  openItemModal();
+}
+
+function openItemModalForEdit(item) {
+  modalMode = "edit";
+  editingItemId = item.uid;
+  currentMarmita = MARMITAS.find((m) => m.id === item.marmitaId);
+
+  $("#itemModalTitle").textContent = `Editar ${item.marmitaName}`;
+  $("#itemModalBasePrice").textContent = `Preço base: ${money(item.basePrice)}`;
+  $("#btnSaveItemModal").textContent = "Salvar alterações";
+
+  $("#comboNote").value = item.note || "";
+  selectedDrinkIds = (item.drinks && item.drinks.length) ? item.drinks.map((d) => d.id) : ["none"];
+
+  renderDrinkGrid(selectedDrinkIds);
+  openItemModal();
+}
+
+function collectModalItemData() {
+  const drinks = selectedDrinkIds
+    .map((id) => DRINKS.find((d) => d.id === id))
+    .filter(Boolean);
+
+  const note = $("#comboNote").value.trim();
+  const drinksTotal = drinks.reduce((acc, d) => acc + d.price, 0);
+
+  return {
+    uid: modalMode === "edit" ? editingItemId : uid(),
+    marmitaId: currentMarmita.id,
+    marmitaName: currentMarmita.name,
+    basePrice: currentMarmita.price,
+    drinks,
+    note,
+    total: currentMarmita.price + drinksTotal
+  };
+}
+
+function saveModalItem() {
+  if (!currentMarmita) return;
+  const item = collectModalItemData();
+
+  if (modalMode === "create") {
+    cartItems.push(item);
+    toast("Item adicionado à sacola.");
+    animateFlyToCart($("#btnSaveItemModal"));
+  } else {
+    const idx = cartItems.findIndex((i) => i.uid === editingItemId);
+    if (idx >= 0) cartItems[idx] = item;
+    toast("Item atualizado.");
+  }
+
+  pulseCartBar();
+  closeItemModal();
+  renderBag();
+  renderSummary();
+  updateCartBar();
+  saveDraft();
+}
+
+/* SACOLA */
+function bagItemMetaText(item) {
+  const drinkNames = (item.drinks && item.drinks.length)
+    ? item.drinks.map((d) => d.name).join(", ")
+    : "Sem bebida";
+
+  const parts = [`Bebidas: ${drinkNames}`];
+  if (item.note) parts.push(`Obs: ${item.note}`);
+  return parts.join(" | ");
+}
+
+function renderBag() {
+  const box = $("#bagList");
+  if (!box) return;
+
+  if (!cartItems.length) {
+    box.innerHTML = `<div class="muted">Sua sacola está vazia.</div>`;
+    return;
+  }
+
+  box.innerHTML = cartItems.map((item, idx) => `
+    <article class="bag-item">
+      <div class="bag-title">
+        <strong>${idx + 1}. ${item.marmitaName}</strong>
+        <strong>${money(item.total)}</strong>
+      </div>
+      <div class="bag-meta">${bagItemMetaText(item)}</div>
+      <div class="bag-actions">
+        <button type="button" class="bag-btn" data-edit="${item.uid}">Editar</button>
+        <button type="button" class="bag-btn" data-dup="${item.uid}">Duplicar</button>
+        <button type="button" class="bag-btn danger" data-del="${item.uid}">Remover</button>
+      </div>
+    </article>
+  `).join("");
+
+  document.querySelectorAll("[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const it = cartItems.find((i) => i.uid === btn.dataset.edit);
+      if (it) openItemModalForEdit(it);
+    });
+  });
+
+  document.querySelectorAll("[data-dup]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const it = cartItems.find((i) => i.uid === btn.dataset.dup);
+      if (!it) return;
+      const clone = JSON.parse(JSON.stringify(it));
+      clone.uid = uid();
+      cartItems.push(clone);
+      renderBag();
       renderSummary();
+      updateCartBar();
+      pulseCartBar();
+      saveDraft();
+      toast("Item duplicado.");
+    });
+  });
+
+  document.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      cartItems = cartItems.filter((i) => i.uid !== btn.dataset.del);
+      renderBag();
+      renderSummary();
+      updateCartBar();
+      pulseCartBar();
+      saveDraft();
+      toast("Item removido.");
+    });
+  });
+}
+
+/* ENDEREÇO */
+function initAddressTypeChips() {
+  document.querySelectorAll("#addressTypeChips .chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll("#addressTypeChips .chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      addressType = chip.dataset.type;
       saveDraft();
     });
   });
 }
 
-function attachMarmitaObsEvents(){
-  document.querySelectorAll("textarea[data-note-id]").forEach(textarea=>{
-    textarea.addEventListener("input", ()=>{
-      const id = textarea.dataset.noteId;
-      marmitaNotes[id] = textarea.value;
+function restoreAddressTypeChip() {
+  document.querySelectorAll("#addressTypeChips .chip").forEach((c) => {
+    c.classList.toggle("active", c.dataset.type === addressType);
+  });
+}
+
+/* PAGAMENTO */
+function initPaymentCards() {
+  const hidden = $("#paymentMethod");
+  document.querySelectorAll(".pay-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".pay-card").forEach((c) => c.classList.remove("active"));
+      card.classList.add("active");
+      selectedPayment = card.dataset.pay;
+      hidden.value = selectedPayment;
+      $("#changeField").style.display = selectedPayment === "Dinheiro" ? "block" : "none";
       saveDraft();
-      renderSummary();
     });
   });
 }
 
-function getSelectedMarmitaLines(){
-  const lines = [];
-  for(const item of MARMITAS){
-    const qty = selectedMarmitas[item.id] || 0;
-    if(qty > 0){
-      lines.push({
-        type: "marmita",
-        id: item.id,
-        name: item.name,
-        qty,
-        unit: item.price,
-        total: item.price * qty,
-        note: (marmitaNotes[item.id] || "").trim()
-      });
-    }
-  }
-  return lines;
-}
-function getSelectedDrinkLines(){
-  const lines = [];
-  for(const item of DRINKS){
-    const qty = selectedDrinks[item.id] || 0;
-    if(qty > 0){
-      lines.push({
-        type: "bebida",
-        id: item.id,
-        name: item.name,
-        qty,
-        unit: item.price,
-        total: item.price * qty
-      });
-    }
-  }
-  return lines;
-}
-function getAllSelectedLines(){
-  return [...getSelectedMarmitaLines(), ...getSelectedDrinkLines()];
+function restorePaymentCard() {
+  if (!selectedPayment) return;
+  $("#paymentMethod").value = selectedPayment;
+  document.querySelectorAll(".pay-card").forEach((c) => {
+    c.classList.toggle("active", c.dataset.pay === selectedPayment);
+  });
+  $("#changeField").style.display = selectedPayment === "Dinheiro" ? "block" : "none";
 }
 
-function calcTotal(){
-  const lines = getAllSelectedLines();
-  const subtotal = lines.reduce((acc, l) => acc + l.total, 0);
+/* TOTAIS */
+function getDeliveryFee(subtotal) {
+  return subtotal >= CONFIG.freeDeliveryMinimum ? 0 : CONFIG.deliveryFee;
+}
+
+function calcTotal() {
+  const subtotal = cartItems.reduce((a, b) => a + b.total, 0);
   const delivery = getDeliveryFee(subtotal);
-  const total = subtotal + delivery;
-  return { lines, subtotal, delivery, total };
+  return { subtotal, delivery, total: subtotal + delivery };
 }
 
-function renderMinimumRule(subtotal){
+function renderMinimumRule(subtotal) {
   const box = $("#minimumRuleBox");
-  if(!box) return;
+  if (!box) return;
 
   const missing = Math.max(0, CONFIG.freeDeliveryMinimum - subtotal);
-  const deliveryNow = getDeliveryFee(subtotal);
 
-  if(subtotal >= CONFIG.freeDeliveryMinimum){
+  if (subtotal >= CONFIG.freeDeliveryMinimum) {
     box.style.borderColor = "#86efac";
     box.style.background = "#f0fdf4";
     box.style.color = "#166534";
     box.innerHTML = `✅ Frete grátis liberado! Valor mínimo de ${money(CONFIG.freeDeliveryMinimum)} atingido.`;
   } else {
-    box.style.borderColor = "#fde68a";
-    box.style.background = "#fffbeb";
+    box.style.borderColor = "#ffd699";
+    box.style.background = "#fff8e8";
     box.style.color = "#92400e";
-    box.innerHTML = `🚚 Frete atual: ${money(deliveryNow)}. Adicione mais ${money(missing)} em itens para ganhar frete grátis.`;
+    box.innerHTML = `🚚 Frete R$ 5,00. Faltam ${money(missing)} para frete grátis.`;
   }
 }
 
-function renderSummary(){
-  const { lines, subtotal, delivery, total } = calcTotal();
+function renderSummary() {
+  const box = $("#summaryBox");
+  if (!box) return;
 
-  let itemsHtml = "";
-  if(!lines.length){
-    itemsHtml = `<div class="row"><span>Itens</span><strong>Nenhum selecionado</strong></div>`;
-  } else {
-    itemsHtml = lines.map(l => `
+  const { subtotal, delivery, total } = calcTotal();
+
+  const itemsHtml = cartItems.length
+    ? cartItems.map((item, idx) => `
       <div>
         <div class="row">
-          <span>${l.name} x${l.qty}</span>
-          <strong>${money(l.total)}</strong>
+          <span>${idx + 1}. ${item.marmitaName}</span>
+          <strong>${money(item.total)}</strong>
         </div>
-        ${l.type === "marmita" && l.note ? `<small style="color:#64748b">Obs: ${l.note}</small>` : ""}
+        <small style="color:#4e6a6f">${bagItemMetaText(item)}</small>
       </div>
-    `).join("");
-  }
+    `).join("")
+    : `<div class="row"><span>Itens</span><strong>Nenhum selecionado</strong></div>`;
 
-  $("#summaryBox").innerHTML = `
+  box.innerHTML = `
     ${itemsHtml}
-    <div class="row"><span>Subtotal (itens)</span><strong>${money(subtotal)}</strong></div>
+    <div class="row"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
     <div class="row"><span>Frete</span><strong>${money(delivery)}</strong></div>
     <div class="row total"><span>Total</span><strong>${money(total)}</strong></div>
   `;
@@ -366,128 +495,101 @@ function renderSummary(){
   renderMinimumRule(subtotal);
 }
 
-/* ===== UI ===== */
-function updateProgress(){
+function updateCartBar() {
+  const meta = $("#cartBarMeta");
+  if (!meta) return;
+  const { total } = calcTotal();
+  const qty = cartItems.length;
+  meta.textContent = `${qty} item${qty === 1 ? "" : "s"} • ${money(total)}`;
+}
+
+/* STEPS */
+function updateProgress() {
   const pct = currentStep === 1 ? 33 : currentStep === 2 ? 66 : 100;
   $("#progressBar").style.width = pct + "%";
   $("#progressLabel").textContent = pct + "%";
 }
-function updateStepUI(){
-  [1,2,3].forEach(i => {
-    $("#step"+i).classList.toggle("active", i===currentStep);
-    $("#stepIndicator"+i).classList.toggle("active", i===currentStep);
+
+function updateStepUI() {
+  [1, 2, 3].forEach((i) => {
+    const el = $("#stepIndicator" + i);
+    if (el) el.classList.toggle("active", i === currentStep);
   });
+
   $("#btnPrev").disabled = currentStep === 1;
   $("#btnNext").textContent = currentStep === 3 ? "Finalizar pedido" : "Próximo";
+
+  const cartLabel = $("#cartBarLabel");
+  if (cartLabel) {
+    cartLabel.textContent =
+      currentStep === 1 ? "Ver sacola" :
+      currentStep === 2 ? "Ir para pagamento" :
+      "Revisar pedido";
+  }
+
+  const track = $("#stepsTrack");
+  if (track) track.style.transform = `translateX(-${(currentStep - 1) * 33.3333}%)`;
   updateProgress();
 }
 
-function setInvalid(input, message){
-  input.classList.add("is-invalid");
-  let err = input.parentElement.querySelector(".error-text");
-  if(!err){
-    err = document.createElement("small");
-    err.className = "error-text";
-    input.parentElement.appendChild(err);
-  }
-  err.textContent = message;
-}
-function clearInvalid(input){
-  input.classList.remove("is-invalid");
-  const err = input.parentElement.querySelector(".error-text");
-  if(err) err.remove();
-}
-function setInvalidById(id){ const el=$("#"+id); if(el) el.classList.add("is-invalid"); }
-function clearInvalidById(id){ const el=$("#"+id); if(el) el.classList.remove("is-invalid"); }
-
-function confirmDeliveryDataBeforeStep3(){
-  const message =
-`Confira seus dados de entrega antes de continuar.
-
-Se a entrega for em prédio/condomínio, informe BLOCO e APTO no campo de referência.
-
-Deseja continuar?`;
-  return window.confirm(message);
-}
-
-function validateStep(step){
-  if(step === 1){
-    const totalMarmitas = Object.values(selectedMarmitas).reduce((a,b)=>a+b,0);
-    if(totalMarmitas <= 0){
-      setInvalidById("marmitaChoices");
+/* VALIDAÇÃO */
+function validateStep(step) {
+  if (step === 1) {
+    if (!cartItems.length) {
       toast("Adicione pelo menos 1 marmita.");
       return false;
     }
     return true;
   }
 
-  if(step === 2){
-    let ok = true;
-    const required = [
-      ["customerName","Informe seu nome."],
-      ["customerPhone","Informe seu WhatsApp."],
-      ["addressDistrict","Informe o bairro."],
-      ["addressStreet","Informe a rua."],
-      ["addressNumber","Informe o número."],
-      ["addressReference","Informe um ponto de referência."]
-    ];
-
-    required.forEach(([id,msg])=>{
-      const input = $("#"+id);
-      if(!input || !input.value.trim()){ if(input) setInvalid(input, msg); ok = false; }
-      else clearInvalid(input);
-    });
-
-    if(onlyDigits($("#customerPhone").value).length < 10){
-      setInvalid($("#customerPhone"), "WhatsApp inválido."); ok = false;
+  if (step === 2) {
+    const req = ["customerName", "customerPhone", "addressDistrict", "addressStreet", "addressNumber", "addressReference"];
+    for (const id of req) {
+      if (!$("#" + id).value.trim()) {
+        toast("Preencha os dados de entrega.");
+        return false;
+      }
     }
-
-    if(!ok){
-      toast("Preencha os campos obrigatórios.");
+    if (onlyDigits($("#customerPhone").value).length < 10) {
+      toast("WhatsApp inválido.");
       return false;
     }
-
-    // popup de conferência antes de ir ao passo 3
-    if(!confirmDeliveryDataBeforeStep3()){
-      return false;
-    }
-
-    return true;
+    return confirm("Confira seus dados de entrega.\n\nDeseja continuar?");
   }
 
-  if(step === 3){
-    let ok = true;
-    const method = $("#paymentMethod");
-    if(!method.value){ setInvalid(method, "Selecione a forma de pagamento."); ok = false; }
-    else clearInvalid(method);
-
-    if(method.value === "Dinheiro"){
-      const troco = $("#changeFor");
-      if(!troco.value){ setInvalid(troco, "Informe o troco para quanto."); ok = false; }
-      else clearInvalid(troco);
-    } else clearInvalid($("#changeFor"));
-
-    return ok;
+  if (step === 3) {
+    if (!$("#paymentMethod").value) {
+      toast("Selecione a forma de pagamento.");
+      return false;
+    }
+    if ($("#paymentMethod").value === "Dinheiro" && !$("#changeFor").value) {
+      toast("Informe o troco para quanto.");
+      return false;
+    }
+    return true;
   }
 
   return true;
 }
 
-function buildOrder(){
-  const { lines, subtotal, delivery, total } = calcTotal();
+/* PEDIDO */
+function buildOrder() {
+  const { subtotal, delivery, total } = calcTotal();
+
   return {
     customer: {
       name: $("#customerName").value.trim(),
       phone: $("#customerPhone").value.trim()
     },
     address: {
+      type: addressType,
       district: $("#addressDistrict").value.trim(),
       street: $("#addressStreet").value.trim(),
       number: $("#addressNumber").value.trim(),
       reference: $("#addressReference").value.trim()
     },
     location: selectedCoords ? { lat: selectedCoords.lat, lng: selectedCoords.lng } : null,
-    items: { lines },
+    items: cartItems,
     payment: {
       method: $("#paymentMethod").value,
       changeFor: Number($("#changeFor").value || 0)
@@ -496,11 +598,17 @@ function buildOrder(){
   };
 }
 
-function orderMessage(order, includePix = false){
-  const itemLines = order.items.lines.map(i => {
-    const obs = (i.type === "marmita" && i.note) ? ` | Obs: ${i.note}` : "";
-    return `- ${i.name} x${i.qty} (${money(i.total)})${obs}`;
-  }).join("\n");
+function itemLineForWhatsapp(item, idx) {
+  const drinksTxt = (item.drinks && item.drinks.length)
+    ? item.drinks.map((d) => `${d.name} (${money(d.price)})`).join(", ")
+    : "Sem bebida";
+
+  const noteTxt = item.note ? ` | Obs: ${item.note}` : "";
+  return `${idx + 1}) ${item.marmitaName} (${money(item.basePrice)}) | Bebidas: ${drinksTxt}${noteTxt} = *${money(item.total)}*`;
+}
+
+function orderMessage(order, includePix = false) {
+  const itemLines = order.items.map(itemLineForWhatsapp).join("\n");
 
   const lines = [
     `*Pedido - ${CONFIG.restaurantName}*`,
@@ -511,11 +619,11 @@ function orderMessage(order, includePix = false){
     `*Itens:*`,
     itemLines || "-",
     ``,
-    `*Subtotal (itens):* ${money(order.totals.subtotal)}`,
+    `*Subtotal:* ${money(order.totals.subtotal)}`,
     `*Frete:* ${money(order.totals.delivery)}`,
     `*Total:* ${money(order.totals.total)}`,
     ``,
-    `*Endereço:* ${order.address.street}, ${order.address.number} - ${order.address.district}`,
+    `*Endereço (${order.address.type}):* ${order.address.street}, ${order.address.number} - ${order.address.district}`,
     `*Referência:* ${order.address.reference}`,
     order.location ? `*Mapa:* https://maps.google.com/?q=${order.location.lat},${order.location.lng}` : "",
     ``,
@@ -523,7 +631,7 @@ function orderMessage(order, includePix = false){
     order.payment.method === "Dinheiro" ? `*Troco para:* ${money(order.payment.changeFor)}` : ""
   ].filter(Boolean);
 
-  if(includePix){
+  if (includePix) {
     lines.push(
       ``,
       `*Dados PIX:*`,
@@ -538,215 +646,275 @@ function orderMessage(order, includePix = false){
   return lines.join("\n");
 }
 
-function openPixModal(){ $("#pixModal").classList.add("show"); $("#pixModal").setAttribute("aria-hidden","false"); }
-function closePixModal(){ $("#pixModal").classList.remove("show"); $("#pixModal").setAttribute("aria-hidden","true"); }
+/* MODAIS */
+function openPixModal() {
+  const m = $("#pixModal");
+  if (!m) return;
+  m.classList.add("show");
+  m.setAttribute("aria-hidden", "false");
+}
 
-function saveDraft(){
+function closePixModal() {
+  const m = $("#pixModal");
+  if (!m) return;
+  m.classList.remove("show");
+  m.setAttribute("aria-hidden", "true");
+}
+
+function closeWelcomeModal() {
+  const m = $("#welcomeModal");
+  if (!m) return;
+  m.classList.remove("show");
+  m.setAttribute("aria-hidden", "true");
+}
+
+/* DRAFT */
+function saveDraft() {
   const draft = {
     currentStep,
-    selectedMarmitas,
-    selectedDrinks,
-    marmitaNotes,
+    addressType,
+    cartItems,
     selectedCoords,
     autoLocatedOnce,
+    selectedPayment,
     customerName: $("#customerName")?.value || "",
     customerPhone: $("#customerPhone")?.value || "",
     addressDistrict: $("#addressDistrict")?.value || "",
     addressStreet: $("#addressStreet")?.value || "",
     addressNumber: $("#addressNumber")?.value || "",
     addressReference: $("#addressReference")?.value || "",
-    paymentMethod: $("#paymentMethod")?.value || "",
     changeFor: $("#changeFor")?.value || ""
   };
+
   localStorage.setItem(CONFIG.draftKey, JSON.stringify(draft));
 }
 
-function loadDraft(){
+function loadDraft() {
   const raw = localStorage.getItem(CONFIG.draftKey);
-  if(!raw) return;
-  try{
+  if (!raw) return;
+
+  try {
     const d = JSON.parse(raw);
+
     currentStep = d.currentStep || 1;
-    selectedMarmitas = d.selectedMarmitas || {};
-    selectedDrinks = d.selectedDrinks || {};
-    marmitaNotes = d.marmitaNotes || {};
+    addressType = d.addressType || "Casa";
+    cartItems = d.cartItems || [];
     selectedCoords = d.selectedCoords || null;
     autoLocatedOnce = d.autoLocatedOnce || false;
+    selectedPayment = d.selectedPayment || "";
 
-    if($("#customerName")) $("#customerName").value = d.customerName || "";
-    if($("#customerPhone")) $("#customerPhone").value = d.customerPhone || "";
-    if($("#addressDistrict")) $("#addressDistrict").value = d.addressDistrict || "";
-    if($("#addressStreet")) $("#addressStreet").value = d.addressStreet || "";
-    if($("#addressNumber")) $("#addressNumber").value = d.addressNumber || "";
-    if($("#addressReference")) $("#addressReference").value = d.addressReference || "";
-    if($("#paymentMethod")) $("#paymentMethod").value = d.paymentMethod || "";
-    if($("#changeFor")) $("#changeFor").value = d.changeFor || "";
-    if($("#changeField")) $("#changeField").style.display = ($("#paymentMethod")?.value === "Dinheiro") ? "block" : "none";
-  }catch{
-    localStorage.removeItem(CONFIG.draftKey);
+    if ($("#customerName")) $("#customerName").value = d.customerName || "";
+    if ($("#customerPhone")) $("#customerPhone").value = d.customerPhone || "";
+    if ($("#addressDistrict")) $("#addressDistrict").value = d.addressDistrict || "";
+    if ($("#addressStreet")) $("#addressStreet").value = d.addressStreet || "";
+    if ($("#addressNumber")) $("#addressNumber").value = d.addressNumber || "";
+    if ($("#addressReference")) $("#addressReference").value = d.addressReference || "";
+    if ($("#changeFor")) $("#changeFor").value = d.changeFor || "";
+  } catch (e) {
+    console.warn("Falha ao carregar draft:", e);
   }
 }
-function clearDraft(){ localStorage.removeItem(CONFIG.draftKey); }
 
-function clearCartOnly(){
-  selectedMarmitas = {};
-  selectedDrinks = {};
-  marmitaNotes = {};
-  renderMarmitas();
-  renderDrinks();
-  rebindStep1Interactions();
-  renderSummary();
-  saveDraft();
-  toast("Carrinho limpo.");
+function clearDraft() {
+  localStorage.removeItem(CONFIG.draftKey);
 }
 
-function resetAll(){
-  selectedMarmitas = {};
-  selectedDrinks = {};
-  marmitaNotes = {};
+/* AÇÕES */
+function clearCartOnly() {
+  cartItems = [];
+  renderBag();
+  renderSummary();
+  updateCartBar();
+  pulseCartBar();
+  saveDraft();
+  toast("Sacola limpa.");
+}
+
+function resetAll() {
+  cartItems = [];
+  addressType = "Casa";
+  currentStep = 1;
+  selectedPayment = "";
   selectedCoords = { lat: DEFAULT_MAP_CENTER.lat, lng: DEFAULT_MAP_CENTER.lng };
   autoLocatedOnce = false;
-  currentStep = 1;
+  selectedDrinkIds = ["none"];
 
-  ["customerName","customerPhone","addressDistrict","addressStreet","addressNumber","addressReference","changeFor"]
-    .forEach(id => { if($("#"+id)) $("#"+id).value = ""; });
+  ["customerName", "customerPhone", "addressDistrict", "addressStreet", "addressNumber", "addressReference", "changeFor"].forEach((id) => {
+    const el = $("#" + id);
+    if (el) el.value = "";
+  });
 
-  if($("#paymentMethod")) $("#paymentMethod").value = "";
-  if($("#changeField")) $("#changeField").style.display = "none";
-  if($("#districtHint")) $("#districtHint").textContent = "Frete R$ 5,00 para pedidos abaixo de R$ 25,00. Acima disso, frete grátis.";
-  if($("#locationHint")) $("#locationHint").textContent = "Permita localização para preencher endereço aproximado.";
+  if ($("#paymentMethod")) $("#paymentMethod").value = "";
+  if ($("#changeField")) $("#changeField").style.display = "none";
+  document.querySelectorAll(".pay-card").forEach((c) => c.classList.remove("active"));
 
-  document.querySelectorAll(".is-invalid").forEach(el=>el.classList.remove("is-invalid"));
-  document.querySelectorAll(".error-text").forEach(el=>el.remove());
-
-  renderMarmitas();
-  renderDrinks();
-  rebindStep1Interactions();
+  renderBag();
   renderSummary();
+  updateCartBar();
   updateStepUI();
+  restoreAddressTypeChip();
   closePixModal();
+  closeItemModal();
 
-  if(map && marker){
+  if (map && marker) {
     setMapLocation(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng, DEFAULT_MAP_CENTER.zoom);
-    setTimeout(()=>map.invalidateSize(), 150);
+    setTimeout(() => map.invalidateSize(), 120);
   }
 
   clearDraft();
-  window.scrollTo({top:0,behavior:"smooth"});
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function init(){
-  closePixModal();
+/* INIT */
+function init() {
   loadDraft();
 
   renderMarmitas();
-  renderDrinks();
-  rebindStep1Interactions();
+  renderBag();
   renderSummary();
+  updateCartBar();
   updateStepUI();
 
   initMap();
-  if(selectedCoords && map){
+  if (selectedCoords && map) {
     setMapLocation(selectedCoords.lat, selectedCoords.lng, 17);
-  } else if(map){
-    setMapLocation(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng, DEFAULT_MAP_CENTER.zoom);
   }
 
-  if($("#districtHint")) $("#districtHint").textContent = "Frete R$ 5,00 para pedidos abaixo de R$ 25,00. Acima disso, frete grátis.";
+  initAddressTypeChips();
+  restoreAddressTypeChip();
+  initPaymentCards();
+  restorePaymentCard();
 
-  if($("#customerPhone")) $("#customerPhone").value = maskPhone($("#customerPhone").value);
+  if ($("#customerPhone")) {
+    $("#customerPhone").value = maskPhone($("#customerPhone").value);
+  }
 
-  [
-    "customerName","customerPhone","addressDistrict","addressStreet",
-    "addressNumber","addressReference","paymentMethod","changeFor"
-  ].forEach(id=>{
-    if(!$("#"+id)) return;
-    $("#"+id).addEventListener("input", saveDraft);
-    $("#"+id).addEventListener("change", saveDraft);
+  ["customerName", "customerPhone", "addressDistrict", "addressStreet", "addressNumber", "addressReference", "changeFor"].forEach((id) => {
+    const el = $("#" + id);
+    if (!el) return;
+    el.addEventListener("input", saveDraft);
   });
 
-  $("#customerPhone")?.addEventListener("input", (e)=>{
-    e.target.value = maskPhone(e.target.value);
-    clearInvalid(e.target);
-    saveDraft();
-  });
-
-  ["customerName","addressDistrict","addressStreet","addressNumber","addressReference","changeFor"]
-    .forEach(id => $("#"+id)?.addEventListener("input", (e)=>clearInvalid(e.target)));
-
-  $("#paymentMethod")?.addEventListener("change", (e)=>{
-    if($("#changeField")) $("#changeField").style.display = e.target.value === "Dinheiro" ? "block" : "none";
-    clearInvalid(e.target);
-    saveDraft();
-  });
-
-  $("#btnUseLocation")?.addEventListener("click", useMyLocation);
-
-  $("#btnPrev")?.addEventListener("click", ()=>{
-    if(currentStep > 1){
-      currentStep--;
-      updateStepUI();
+  if ($("#customerPhone")) {
+    $("#customerPhone").addEventListener("input", (e) => {
+      e.target.value = maskPhone(e.target.value);
       saveDraft();
-      if(currentStep === 2 && map) setTimeout(()=>map.invalidateSize(), 150);
-    }
-  });
+    });
+  }
 
-  $("#btnNext")?.addEventListener("click", ()=>{
-    if(!validateStep(currentStep)) return;
+  if ($("#btnUseLocation")) $("#btnUseLocation").addEventListener("click", useMyLocation);
 
-    if(currentStep < 3){
-      currentStep++;
-      updateStepUI();
+  if ($("#btnPrev")) {
+    $("#btnPrev").addEventListener("click", () => {
+      if (currentStep > 1) {
+        currentStep--;
+        updateStepUI();
+        saveDraft();
+        if (currentStep === 2 && map) setTimeout(() => map.invalidateSize(), 120);
+      }
+    });
+  }
 
-      if(currentStep === 2){
-        if(map) setTimeout(()=>map.invalidateSize(), 150);
-        autoLocateOnStep2();
+  if ($("#btnNext")) {
+    $("#btnNext").addEventListener("click", () => {
+      if (!validateStep(currentStep)) return;
+
+      if (currentStep < 3) {
+        currentStep++;
+        updateStepUI();
+
+        if (currentStep === 2) {
+          if (map) setTimeout(() => map.invalidateSize(), 120);
+          autoLocateOnStep2();
+        }
+
+        if (currentStep === 3) renderSummary();
+        saveDraft();
+        return;
       }
 
-      if(currentStep === 3) renderSummary();
-      saveDraft();
-      return;
-    }
-
-    const order = buildOrder();
-
-    if(order.payment.method === "PIX"){
-      openPixModal();
-      return;
-    }
-
-    const phone = onlyDigits(CONFIG.whatsappNumber);
-    const text = encodeURIComponent(orderMessage(order,false));
-    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
-
-    toast("Pedido enviado com sucesso!");
-    setTimeout(resetAll, 700);
-  });
-
-  $("#btnEditItems")?.addEventListener("click", ()=>{
-    currentStep = 1;
-    updateStepUI();
-    saveDraft();
-    toast("Você voltou para editar os itens.");
-  });
-
-  $("#btnClearCart")?.addEventListener("click", clearCartOnly);
-
-  $("#btnCopyPix")?.addEventListener("click", async ()=>{
-    try{
-      await navigator.clipboard.writeText(CONFIG.pixKey);
-      toast("Chave PIX copiada! Abrindo WhatsApp...");
       const order = buildOrder();
-      const phone = onlyDigits(CONFIG.whatsappNumber);
-      const text = encodeURIComponent(orderMessage(order,true));
-      setTimeout(()=>window.open(`https://wa.me/${phone}?text=${text}`, "_blank"),300);
-    }catch{
-      toast("Não foi possível copiar a chave.");
-    }
-  });
 
-  $("#btnClosePix")?.addEventListener("click", closePixModal);
-  $("#pixModal")?.addEventListener("click",(e)=>{ if(e.target.id === "pixModal") closePixModal(); });
+      if (order.payment.method === "PIX") {
+        openPixModal();
+        return;
+      }
+
+      const phone = onlyDigits(CONFIG.whatsappNumber);
+      const text = encodeURIComponent(orderMessage(order, false));
+      window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+      toast("Pedido enviado com sucesso!");
+      setTimeout(resetAll, 700);
+    });
+  }
+
+  if ($("#btnCartAction")) {
+    $("#btnCartAction").addEventListener("click", () => {
+      if (currentStep === 1) {
+        currentStep = 3;
+        updateStepUI();
+        renderSummary();
+        saveDraft();
+        return;
+      }
+
+      if (currentStep === 2) {
+        if (validateStep(2)) {
+          currentStep = 3;
+          updateStepUI();
+          renderSummary();
+          saveDraft();
+        }
+        return;
+      }
+
+      currentStep = 1;
+      updateStepUI();
+      saveDraft();
+    });
+  }
+
+  if ($("#btnEditItems")) {
+    $("#btnEditItems").addEventListener("click", () => {
+      currentStep = 1;
+      updateStepUI();
+      saveDraft();
+    });
+  }
+
+  if ($("#btnClearCart")) $("#btnClearCart").addEventListener("click", clearCartOnly);
+
+  if ($("#btnCopyPix")) {
+    $("#btnCopyPix").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(CONFIG.pixKey);
+        const order = buildOrder();
+        const phone = onlyDigits(CONFIG.whatsappNumber);
+        const text = encodeURIComponent(orderMessage(order, true));
+        window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
+        toast("Chave PIX copiada!");
+      } catch {
+        toast("Não foi possível copiar a chave.");
+      }
+    });
+  }
+
+  if ($("#btnClosePix")) $("#btnClosePix").addEventListener("click", closePixModal);
+  if ($("#pixModal")) {
+    $("#pixModal").addEventListener("click", (e) => {
+      if (e.target.id === "pixModal") closePixModal();
+    });
+  }
+
+  if ($("#btnCancelItemModal")) $("#btnCancelItemModal").addEventListener("click", closeItemModal);
+  if ($("#btnSaveItemModal")) $("#btnSaveItemModal").addEventListener("click", saveModalItem);
+  if ($("#itemModal")) {
+    $("#itemModal").addEventListener("click", (e) => {
+      if (e.target.id === "itemModal") closeItemModal();
+    });
+  }
+
+  if ($("#btnCloseWelcome")) $("#btnCloseWelcome").addEventListener("click", closeWelcomeModal);
 }
 
-init();
+document.addEventListener("DOMContentLoaded", init);
