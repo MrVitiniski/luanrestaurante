@@ -2,7 +2,7 @@ const CONFIG = {
   restaurantName: "Marmita Express",
   deliveryFee: 5,
   freeDeliveryMinimum: 24.99,
-  whatsappNumber: "5511999999999",
+  whatsappNumber: "5548991998998",
   pixKey: "05674008914",
   draftKey: "marmita_v42_ok"
 };
