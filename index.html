@@ -3,37 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Marmita Express • Pedido Passo a Passo</title>
+  <title>Pedido Express • Pedido Passo a Passo</title>
   <meta name="theme-color" content="#00C2B3" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <main class="app">
-    <!-- HERO COM FOTOS NO FUNDO -->
-   <section class="brand brand-top">
-  <div class="logo">🍱</div>
-  <div>
-    <h1>Marmita Express</h1>
-    <p>Pedido rápido em 3 passos</p>
-  </div>
-</section>
+    <section class="brand brand-top">
+      <div class="logo">🛵</div>
+      <div>
+        <h1>Pedido Express</h1>
+        <p>Pedido rápido em 3 passos</p>
+      </div>
+    </section>
 
-<section class="hero">
-  <div class="hero-bg hero-bg-1"></div>
-  <div class="hero-bg hero-bg-2"></div>
-  <div class="hero-bg hero-bg-3"></div>
-</section>
+    <section class="hero">
+      <div class="hero-bg hero-bg-1"></div>
+      <div class="hero-bg hero-bg-2"></div>
+      <div class="hero-bg hero-bg-3"></div>
+    </section>
 
     <section class="stepper">
       <div class="step active" id="stepIndicator1">1. Itens</div>
@@ -41,20 +33,20 @@
       <div class="step" id="stepIndicator3">3. Pagamento</div>
     </section>
 
-    <section class="progress-wrap" aria-label="Progresso do pedido">
-      <div class="progress-bar" id="progressBar"></div>
-    </section>
+    <section class="progress-wrap"><div class="progress-bar" id="progressBar"></div></section>
     <div class="progress-label" id="progressLabel">33%</div>
 
-    <!-- VIEWPORT COM SLIDE ENTRE STEPS -->
     <section class="steps-viewport">
       <div class="steps-track" id="stepsTrack">
-
         <!-- PASSO 1 -->
-        <section class="card box" id="step1">
-          <h2>🍛 Escolha suas marmitas</h2>
-          <p class="muted">Monte seu combo como desejar.</p>
+        <section class="card box">
+          <h2>🍽️ Itens do pedido</h2>
+          <p class="muted">Adicione/remova nos contadores. Observação só para comida.</p>
           <div class="choices" id="marmitaChoices"></div>
+
+          <h2 class="mt">🥤 Bebidas do pedido</h2>
+          <p class="muted">Bebidas valem para o pedido inteiro.</p>
+          <div id="orderDrinksList"></div>
 
           <h2 class="mt">🧾 Sacola</h2>
           <div id="bagList" class="bag-list"></div>
@@ -65,22 +57,16 @@
         </section>
 
         <!-- PASSO 2 -->
-        <section class="card box" id="step2">
+        <section class="card box">
           <h2>📍 Dados para entrega</h2>
-          <p class="muted">Confirme sua localização no mapa e preencha os dados abaixo.</p>
-
           <div class="grid">
             <div class="field">
               <label>📍 Mapa da localização *</label>
               <div id="map"></div>
-              <small class="hint">Você pode clicar no mapa ou arrastar o pin para o ponto exato.</small>
             </div>
-
             <div class="field">
               <button type="button" class="btn btn-location" id="btnUseLocation">📍 Usar minha localização</button>
-              <small class="hint" id="locationHint">Ao entrar nesta etapa, tentamos localizar automaticamente.</small>
             </div>
-
             <div class="field">
               <label>Tipo de endereço *</label>
               <div class="address-chips" id="addressTypeChips">
@@ -89,103 +75,48 @@
                 <button type="button" class="chip" data-type="Outro">Outro</button>
               </div>
             </div>
-
-            <div class="field">
-              <label>Nome completo *</label>
-              <input id="customerName" />
-            </div>
-
-            <div class="field">
-              <label>WhatsApp *</label>
-              <input id="customerPhone" placeholder="(11) 99999-9999" />
-            </div>
-
-            <div class="field">
-              <label>Bairro *</label>
-              <input id="addressDistrict" placeholder="Ex.: Centro" />
-              <small class="hint">Frete R$ 5,00 abaixo de R$ 24,99. Acima disso, frete grátis.</small>
-            </div>
-
-            <div class="field">
-              <label>Rua / Avenida *</label>
-              <input id="addressStreet" />
-            </div>
-
-            <div class="field">
-              <label>Número *</label>
-              <input id="addressNumber" />
-            </div>
-
-            <div class="field">
-              <label>Ponto de referência *</label>
-              <input id="addressReference" placeholder="Ex.: Portão azul, bloco B apto 203..." />
-              <small class="hint">Se for prédio/condomínio, informe bloco e apartamento.</small>
-            </div>
+            <div class="field"><label>Nome completo *</label><input id="customerName" /></div>
+            <div class="field"><label>WhatsApp *</label><input id="customerPhone" placeholder="(11) 99999-9999" /></div>
+            <div class="field"><label>Bairro *</label><input id="addressDistrict" /></div>
+            <div class="field"><label>Rua / Avenida *</label><input id="addressStreet" /></div>
+            <div class="field"><label>Número *</label><input id="addressNumber" /></div>
+            <div class="field"><label>Ponto de referência *</label><input id="addressReference" /></div>
           </div>
         </section>
 
         <!-- PASSO 3 -->
-        <section class="card box" id="step3">
+        <section class="card box">
           <h2>💳 Forma de pagamento</h2>
-          <p class="muted">Escolha a forma de pagamento para finalizar.</p>
-
-          <div class="pay-grid" id="paymentCards">
-            <button type="button" class="pay-card" data-pay="PIX">
-              <span class="pay-icon">🔷</span>
-              <span class="pay-text">
-                <strong>PIX</strong>
-                <small>Pagamento instantâneo</small>
-              </span>
-            </button>
-
-            <button type="button" class="pay-card" data-pay="Dinheiro">
-              <span class="pay-icon">💵</span>
-              <span class="pay-text">
-                <strong>Dinheiro</strong>
-                <small>Pagamento na entrega</small>
-              </span>
-            </button>
-
-            <button type="button" class="pay-card" data-pay="Cartão na entrega">
-              <span class="pay-icon">💳</span>
-              <span class="pay-text">
-                <strong>Cartão na entrega</strong>
-                <small>Visa • Mastercard</small>
-              </span>
-            </button>
+          <div class="pay-grid">
+            <button type="button" class="pay-card" data-pay="PIX"><span class="pay-icon">🔷</span><span class="pay-text"><strong>PIX</strong><small>Instantâneo</small></span></button>
+            <button type="button" class="pay-card" data-pay="Dinheiro"><span class="pay-icon">💵</span><span class="pay-text"><strong>Dinheiro</strong><small>Na entrega</small></span></button>
+            <button type="button" class="pay-card" data-pay="Cartão na entrega"><span class="pay-icon">💳</span><span class="pay-text"><strong>Cartão na entrega</strong><small>Crédito / Débito</small></span></button>
           </div>
 
           <input type="hidden" id="paymentMethod" />
-
-          <div class="grid" id="payExtras">
+          <div class="grid">
             <div class="field" id="changeField" style="display:none">
               <label>Troco para quanto? *</label>
-              <input id="changeFor" type="number" min="0" step="0.01" placeholder="0,00" />
+              <input id="changeFor" type="number" min="0" step="0.01" />
             </div>
           </div>
 
           <h2 class="mt">🧾 Resumo</h2>
           <div class="summary" id="summaryBox"></div>
-
           <div class="rule-box" id="minimumRuleBox"></div>
-
-          <div class="edit-items-wrap">
-            <button class="btn-link" id="btnEditItems" type="button">✏️ Editar itens</button>
-          </div>
         </section>
       </div>
     </section>
   </main>
 
-  <!-- Barra sacola -->
-  <div class="cartbar" id="cartBar">
+  <!-- Barra preta -->
+  <div class="cartbar">
     <button class="cartbar-btn" id="btnCartAction">
       <span id="cartBarLabel">Ver sacola</span>
       <strong id="cartBarMeta">0 itens • R$ 0,00</strong>
     </button>
   </div>
 
-  <!-- Navegação -->
   <div class="nav">
     <div class="nav-wrap">
       <button class="btn prev" id="btnPrev">Voltar</button>
@@ -195,28 +126,15 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- Modal Marmita (bottom sheet no mobile) -->
-  <div id="itemModal" class="modal" aria-hidden="true">
-    <div class="modal-card sheet">
-      <div class="sheet-handle"></div>
-      <h3 id="itemModalTitle">Configurar marmita</h3>
-      <p class="muted" id="itemModalBasePrice"></p>
-
-      <!-- primeiro descrição -->
-      <div class="modal-section">
-        <strong>Descreva seu item</strong>
-        <textarea id="comboNote" rows="3" placeholder="Ex.: sem pimenta, carne ao ponto, etc."></textarea>
-      </div>
-
-      <!-- depois bebidas -->
-      <div class="modal-section">
-        <strong>Escolha bebidas (sem limite)</strong>
-        <div id="drinkGrid" class="drink-grid"></div>
-      </div>
-
+  <!-- Modal observação -->
+  <div id="noteModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3 id="noteModalTitle">Observação do item</h3>
+      <p class="muted">Ex.: sem cebola, sem pimenta, bem passado...</p>
+      <textarea id="noteInput" rows="4" placeholder="Digite a observação"></textarea>
       <div class="modal-actions">
-        <button class="btn prev" id="btnCancelItemModal">Cancelar</button>
-        <button class="btn next" id="btnSaveItemModal">Adicionar à sacola</button>
+        <button class="btn prev" id="btnCancelNote">Cancelar</button>
+        <button class="btn next" id="btnSaveNote">Salvar</button>
       </div>
     </div>
   </div>
@@ -225,15 +143,12 @@
   <div id="pixModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3>Pagamento via PIX</h3>
-      <p class="muted">Copie a chave e envie o comprovante no WhatsApp.</p>
-
       <div class="modal-box">
         <div><strong>Tipo:</strong> CPF</div>
         <div><strong>Chave:</strong> 05674008914</div>
         <div><strong>Nome:</strong> THOMAZ VITINISKI</div>
         <div><strong>Banco:</strong> Efí</div>
       </div>
-
       <div class="modal-actions">
         <button class="btn wa" id="btnCopyPix">Copiar chave PIX e abrir WhatsApp</button>
         <button class="btn next" id="btnClosePix">Fechar</button>
@@ -241,29 +156,27 @@
     </div>
   </div>
 
-  <!-- Popup inicial -->
-  <div id="welcomeModal" class="modal show" aria-hidden="false">
-    <div class="modal-card welcome-card">
-      <h3>🍽️ Cardápio do dia</h3>
-      <img
-        class="welcome-img"
-        src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=70"
-        alt="Cardápio do dia"
-      />
-      <p class="muted">
-        Arroz, feijão, frango grelhado, bife acebolado, salada e farofa.
-      </p>
-      <div class="modal-actions one">
-        <button class="btn next" id="btnCloseWelcome">Começar pedido</button>
+  <!-- Modal SACOLA -->
+  <div id="cartModal" class="modal" aria-hidden="true">
+    <div class="modal-card cart-modal-card">
+      <h3>🧾 Sua sacola</h3>
+      <div id="cartModalList" class="bag-list"></div>
+
+      <div class="summary" style="margin-top:10px">
+        <div class="row"><span>Subtotal comida</span><strong id="cmFood">R$ 0,00</strong></div>
+        <div class="row"><span>Subtotal bebidas</span><strong id="cmDrink">R$ 0,00</strong></div>
+        <div class="row"><span>Frete</span><strong id="cmDelivery">R$ 0,00</strong></div>
+        <div class="row total"><span>Total</span><strong id="cmTotal">R$ 0,00</strong></div>
+      </div>
+
+      <div class="cart-modal-footer">
+        <button class="btn prev" id="btnCloseCartModal">Fechar</button>
+        <button class="btn next" id="btnGoCheckoutFromCart">Ir para pagamento</button>
       </div>
     </div>
   </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="./script.js"></script>
 </body>
 </html>
