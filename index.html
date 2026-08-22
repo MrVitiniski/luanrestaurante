@@ -17,7 +17,7 @@
       <div class="logo">🛵</div>
       <div>
         <h1>Pedido Express</h1>
-        <p>Pedido rápido em 3 passos</p>
+        <p>Toque no item para adicionar</p>
       </div>
     </section>
 
@@ -29,7 +29,7 @@
 
     <section class="stepper">
       <div class="step active" id="stepIndicator1">1. Itens</div>
-      <div class="step" id="stepIndicator2">2. Entrega</div>
+      <div class="step" id="stepIndicator2">2. Dados</div>
       <div class="step" id="stepIndicator3">3. Pagamento</div>
     </section>
 
@@ -40,12 +40,12 @@
       <div class="steps-track" id="stepsTrack">
         <!-- PASSO 1 -->
         <section class="card box">
-          <h2>🍽️ Itens do pedido</h2>
-          <p class="muted">Adicione/remova nos contadores. Observação só para comida.</p>
+          <h2>🍽️ Comidas</h2>
+          <p class="muted">Clique no card para adicionar na sacola.</p>
           <div class="choices" id="marmitaChoices"></div>
 
-          <h2 class="mt">🥤 Bebidas do pedido</h2>
-          <p class="muted">Bebidas valem para o pedido inteiro.</p>
+          <h2 class="mt">🥤 Bebidas</h2>
+          <p class="muted">Clique na bebida para adicionar na sacola.</p>
           <div id="orderDrinksList"></div>
 
           <h2 class="mt">🧾 Sacola</h2>
@@ -58,39 +58,95 @@
 
         <!-- PASSO 2 -->
         <section class="card box">
-          <h2>📍 Dados para entrega</h2>
+          <h2>📍 Dados do pedido</h2>
+
+          <div class="field">
+            <label>Tipo do pedido *</label>
+            <div class="address-chips" id="orderTypeChips">
+              <button type="button" class="chip active" data-order-type="Entrega">Entrega</button>
+              <button type="button" class="chip" data-order-type="Retirada no balcão">Retirada no balcão</button>
+            </div>
+          </div>
+
           <div class="grid">
+            <div class="field">
+              <label>Nome completo *</label>
+              <input id="customerName" />
+            </div>
+
+            <div class="field">
+              <label>WhatsApp *</label>
+              <input id="customerPhone" placeholder="(11) 99999-9999" />
+            </div>
+
+            <div class="field">
+              <label>Código do pedido</label>
+              <div class="order-code-box" id="orderCodeBox">PD-----</div>
+              <small class="muted">Gerado pelos 4 últimos dígitos do telefone.</small>
+            </div>
+          </div>
+
+          <div id="deliveryFields">
+            <!-- MAPA PRIMEIRO -->
             <div class="field">
               <label>📍 Mapa da localização *</label>
               <div id="map"></div>
+              <small class="muted">Arraste o pin para sincronizar rua, número, bairro e CEP.</small>
+              <button type="button" class="btn btn-location" id="btnUseLocation" style="margin-top:8px">📍 Usar minha localização</button>
             </div>
-            <div class="field">
-              <button type="button" class="btn btn-location" id="btnUseLocation">📍 Usar minha localização</button>
-            </div>
-            <div class="field">
-              <label>Tipo de endereço *</label>
-              <div class="address-chips" id="addressTypeChips">
-                <button type="button" class="chip active" data-type="Casa">Casa</button>
-                <button type="button" class="chip" data-type="Trabalho">Trabalho</button>
-                <button type="button" class="chip" data-type="Outro">Outro</button>
+
+            <!-- DADOS MANUAIS DEPOIS -->
+            <div class="grid">
+              <div class="field">
+                <label>CEP *</label>
+                <input id="addressZip" placeholder="00000-000" maxlength="9" />
+                <small class="muted" id="zipStatus"></small>
+              </div>
+
+              <div class="field">
+                <label>Bairro *</label>
+                <input id="addressDistrict" />
+              </div>
+
+              <div class="field">
+                <label>Rua / Avenida *</label>
+                <input id="addressStreet" />
+              </div>
+
+              <div class="field">
+                <label>Número *</label>
+                <input id="addressNumber" />
+              </div>
+
+              <div class="field">
+                <label>Ponto de referência *</label>
+                <input id="addressReference" />
+              </div>
+
+              <div class="field">
+                <label>Tipo de endereço *</label>
+                <div class="address-chips" id="addressTypeChips">
+                  <button type="button" class="chip active" data-type="Casa">Casa</button>
+                  <button type="button" class="chip" data-type="Trabalho">Trabalho</button>
+                  <button type="button" class="chip" data-type="Outro">Outro</button>
+                </div>
               </div>
             </div>
-            <div class="field"><label>Nome completo *</label><input id="customerName" /></div>
-            <div class="field"><label>WhatsApp *</label><input id="customerPhone" placeholder="(11) 99999-9999" /></div>
-            <div class="field"><label>Bairro *</label><input id="addressDistrict" /></div>
-            <div class="field"><label>Rua / Avenida *</label><input id="addressStreet" /></div>
-            <div class="field"><label>Número *</label><input id="addressNumber" /></div>
-            <div class="field"><label>Ponto de referência *</label><input id="addressReference" /></div>
           </div>
         </section>
 
         <!-- PASSO 3 -->
         <section class="card box">
           <h2>💳 Forma de pagamento</h2>
+
+          <div class="order-code-line">
+            Código do pedido: <strong id="orderCodePay">PD-----</strong>
+          </div>
+
           <div class="pay-grid">
             <button type="button" class="pay-card" data-pay="PIX"><span class="pay-icon">🔷</span><span class="pay-text"><strong>PIX</strong><small>Instantâneo</small></span></button>
-            <button type="button" class="pay-card" data-pay="Dinheiro"><span class="pay-icon">💵</span><span class="pay-text"><strong>Dinheiro</strong><small>Na entrega</small></span></button>
-            <button type="button" class="pay-card" data-pay="Cartão na entrega"><span class="pay-icon">💳</span><span class="pay-text"><strong>Cartão na entrega</strong><small>Crédito / Débito</small></span></button>
+            <button type="button" class="pay-card" data-pay="Dinheiro"><span class="pay-icon">💵</span><span class="pay-text"><strong>Dinheiro</strong><small>Na retirada/entrega</small></span></button>
+            <button type="button" class="pay-card" data-pay="Cartão"><span class="pay-icon">💳</span><span class="pay-text"><strong>Cartão</strong><small>Crédito / Débito</small></span></button>
           </div>
 
           <input type="hidden" id="paymentMethod" />
@@ -109,7 +165,6 @@
     </section>
   </main>
 
-  <!-- Barra preta -->
   <div class="cartbar">
     <button class="cartbar-btn" id="btnCartAction">
       <span id="cartBarLabel">Ver sacola</span>
@@ -130,10 +185,10 @@
   <div id="noteModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3 id="noteModalTitle">Observação do item</h3>
-      <p class="muted">Ex.: sem cebola, sem pimenta, bem passado...</p>
-      <textarea id="noteInput" rows="4" placeholder="Digite a observação"></textarea>
+      <textarea id="noteInput" rows="4" placeholder="Ex.: sem cebola, sem pimenta..."></textarea>
       <div class="modal-actions">
         <button class="btn prev" id="btnCancelNote">Cancelar</button>
+        <button class="btn ghost" id="btnClearNote">Remover obs</button>
         <button class="btn next" id="btnSaveNote">Salvar</button>
       </div>
     </div>
@@ -143,13 +198,16 @@
   <div id="pixModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3>Pagamento via PIX</h3>
-      <div class="modal-box">
+      <p class="muted">Informe este código ao enviar o comprovante:</p>
+      <div class="order-code-box" id="orderCodePix">PD-----</div>
+
+      <div class="modal-box" style="margin-top:10px">
         <div><strong>Tipo:</strong> CPF</div>
         <div><strong>Chave:</strong> 05674008914</div>
         <div><strong>Nome:</strong> THOMAZ VITINISKI</div>
         <div><strong>Banco:</strong> Efí</div>
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions two">
         <button class="btn wa" id="btnCopyPix">Copiar chave PIX e abrir WhatsApp</button>
         <button class="btn next" id="btnClosePix">Fechar</button>
       </div>
@@ -172,6 +230,19 @@
       <div class="cart-modal-footer">
         <button class="btn prev" id="btnCloseCartModal">Fechar</button>
         <button class="btn next" id="btnGoCheckoutFromCart">Ir para pagamento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOVO: Modal de confirmação de endereço ao ir para pagamento -->
+  <div id="confirmAddressModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Confirmar endereço</h3>
+      <p class="muted">Confira antes de ir para pagamento:</p>
+      <div class="modal-box" id="confirmAddressContent"></div>
+      <div class="modal-actions two">
+        <button class="btn prev" id="btnEditAddress">Editar endereço</button>
+        <button class="btn next" id="btnConfirmAddressGoPay">Endereço correto, continuar</button>
       </div>
     </div>
   </div>
