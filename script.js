@@ -3,14 +3,7 @@ const CONFIG = {
   deliveryFee: 5,
   freeDeliveryMinimum: 24.99,
   whatsappNumber: "5548999689856",
-  pixKey: "05674008914",const CONFIG = {
-  restaurantName: "Pedido Express",
-  deliveryFee: 5,
-  freeDeliveryMinimum: 24.99,
-  whatsappNumber: "5548999689856",
-  pixKey: "05674008914",
-  draftKey: "pedido_v9_sync_duplo_confirmacao"
-};
+  
 
 const DEFAULT_MAP_CENTER = { lat: -28.6736, lng: -49.3697, zoom: 16 };
 
