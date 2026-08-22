@@ -2,7 +2,7 @@ const CONFIG = {
   restaurantName: "Pedido Express",
   deliveryFee: 5,
   freeDeliveryMinimum: 24.99,
-  whatsappNumber: "5548996989856",
+  whatsappNumber: "5548999689856",
   pixKey: "05674008914",
   draftKey: "pedido_v9_sync_duplo_confirmacao"
 };
